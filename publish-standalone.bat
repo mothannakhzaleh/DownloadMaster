@@ -46,10 +46,13 @@ cd /d "%ROOT%"
 if exist "%OUTPUT%" rmdir /s /q "%OUTPUT%"
 mkdir "%OUTPUT%"
 
+REM --- Clean Release before publish ---
+dotnet clean DownloadMaster.csproj -c Release >nul 2>&1
+
 REM --- Publish single-file exe ---
 echo [3/4] Publishing Release x64 single-file exe...
 cd /d "%PROJECT%"
-dotnet publish DownloadMaster.csproj -c Release --no-incremental ^
+dotnet publish DownloadMaster.csproj -c Release ^
   --self-contained true ^
   -p:PublishSingleFile=true ^
   -p:IncludeNativeLibrariesForSelfExtract=true ^

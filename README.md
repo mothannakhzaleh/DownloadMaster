@@ -91,7 +91,6 @@ Builds **Release x64** and launches the app.
 | `start.bat` | Clean Debug → build Release x64 → run |
 | `build.bat` | Build Release x64 only |
 | `publish-standalone.bat` | Self-contained single-file publish + copy tools |
-| `publish.bat` | Alias for `publish-standalone.bat` |
 | `setup-tools.bat` | Download yt-dlp / verify FFmpeg |
 | `release-github.bat` | Publish, zip, and upload GitHub release tag |
 
@@ -109,7 +108,7 @@ Uses `Version` from `DownloadMaster\DownloadMaster.csproj` (e.g. `1.0.0` → tag
 release-github.bat 1.0.1
 ```
 
-Creates `artifacts\DownloadMaster-v1.0.0-win-x64.zip` and uploads it to a new GitHub release.
+Creates `artifacts\DownloadMaster-v1.0.0-win-x64.zip`, uploads it to a new GitHub release, then deletes local zip, notes, `publish\`, and `artifacts\` folders.
 
 ### Publish output
 

@@ -3,9 +3,8 @@ setlocal EnableDelayedExpansion
 title DownloadMaster - GitHub Release
 cd /d "%~dp0"
 
-set "ROOT=%~dp0"
-set "ARTIFACTS=%ROOT%artifacts"
-set "PUBLISH=%ROOT%publish"
+set "ARTIFACTS=artifacts"
+set "PUBLISH=publish"
 
 echo.
 echo  ============================================
@@ -28,13 +27,14 @@ if errorlevel 1 (
     exit /b 1
 )
 
-for /f "usebackq delims=" %%V in (`powershell -NoProfile -Command "(Select-Xml -Path '%ROOT%DownloadMaster\DownloadMaster.csproj' -XPath '//Version').Node.InnerText"`) do set "VERSION=%%V"
+for /f "usebackq delims=" %%V in (`powershell -NoProfile -Command "(Select-Xml -Path 'DownloadMaster\DownloadMaster.csproj' -XPath '//Version').Node.InnerText"`) do set "VERSION=%%V"
 if not defined VERSION set "VERSION=1.0.0"
 
 if not "%~1"=="" set "VERSION=%~1"
 
 set "TAG=v%VERSION%"
 set "ZIP=%ARTIFACTS%\DownloadMaster-%TAG%-win-x64.zip"
+set "NOTES=%ARTIFACTS%\release-notes-%TAG%.md"
 
 echo Version : %VERSION%
 echo Tag     : %TAG%
@@ -48,8 +48,8 @@ if /I not "%CONFIRM%"=="Y" (
 )
 
 echo.
-echo [1/3] Publishing standalone build...
-call "%ROOT%publish-standalone.bat" --no-pause
+echo [1/4] Publishing standalone build...
+call publish-standalone.bat --no-pause
 if errorlevel 1 (
     echo ERROR: Publish failed.
     pause
@@ -63,19 +63,25 @@ if not exist "%PUBLISH%\DownloadMaster.exe" (
 )
 
 echo.
-echo [2/3] Creating release zip...
+echo [2/4] Creating release zip...
 if not exist "%ARTIFACTS%" mkdir "%ARTIFACTS%"
 if exist "%ZIP%" del /f /q "%ZIP%"
 
-powershell -NoProfile -Command "Compress-Archive -Path '%PUBLISH%\*' -DestinationPath '%ZIP%' -Force"
+powershell -NoProfile -Command "Compress-Archive -Path 'publish\*' -DestinationPath '%ZIP%' -Force"
 if errorlevel 1 (
     echo ERROR: Failed to create zip.
     pause
     exit /b 1
 )
 
+if not exist "%ZIP%" (
+    echo ERROR: Zip was not created: %ZIP%
+    pause
+    exit /b 1
+)
+
 echo.
-echo [3/3] Creating GitHub release %TAG%...
+echo [3/4] Creating GitHub release %TAG%...
 gh release view "%TAG%" >nul 2>&1
 if not errorlevel 1 (
     echo ERROR: Release %TAG% already exists. Bump Version in DownloadMaster.csproj or pass a new version:
@@ -90,12 +96,9 @@ echo.
 echo Extract the zip and run DownloadMaster.exe. No .NET runtime required.
 echo.
 echo Includes bundled yt-dlp and FFmpeg in the tools folder.
-) > "%ARTIFACTS%\release-notes-%TAG%.md"
+) > "%NOTES%"
 
-gh release create "%TAG%" "%ZIP%" ^
-  --title "DownloadMaster %TAG%" ^
-  --notes-file "%ARTIFACTS%\release-notes-%TAG%.md"
-
+gh release create "%TAG%" "%ZIP%" --title "DownloadMaster %TAG%" --notes-file "%NOTES%"
 if errorlevel 1 (
     echo ERROR: GitHub release failed.
     pause
@@ -103,9 +106,17 @@ if errorlevel 1 (
 )
 
 echo.
+echo [4/4] Cleaning local release artifacts...
+if exist "%ZIP%" del /f /q "%ZIP%"
+if exist "%NOTES%" del /f /q "%NOTES%"
+if exist "%PUBLISH%" rmdir /s /q "%PUBLISH%"
+if exist "%ARTIFACTS%" rmdir /s /q "%ARTIFACTS%" 2>nul
+
+echo.
 echo  ============================================
 echo   Release uploaded successfully!
 echo  ============================================
+echo   Cleaned: zip, release notes, publish folder
 echo.
 gh release view "%TAG%" --web 2>nul
 echo.

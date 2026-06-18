@@ -23,8 +23,8 @@ VideoDownloader/
 │
 ├── start.bat                   # Build Release x64 + run app
 ├── build.bat                   # Build Release x64 only
-├── publish.bat                 # Calls publish-standalone.bat
 ├── publish-standalone.bat      # Self-contained publish → publish/
+├── release-github.bat          # Publish + zip + GitHub release
 ├── setup-tools.bat             # Download yt-dlp, verify FFmpeg in tools/
 │
 └── DownloadMaster/             # Main WPF project (.NET 8)
