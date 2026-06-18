@@ -1,9 +1,5 @@
 # DownloadMaster
 
-Native Windows video download manager — **one app, no Python/Node/CMD setup**.
-
-Built with **.NET 8 WPF**, powered by bundled **yt-dlp** and **FFmpeg**.
-
 [![Release](https://img.shields.io/github/v/release/mothannakhzaleh/DownloadMaster?label=latest)](https://github.com/mothannakhzaleh/DownloadMaster/releases)
 
 ---
