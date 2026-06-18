@@ -17,7 +17,13 @@ public sealed class DownloadItem : INotifyPropertyChanged
 
     public string Id { get; init; } = Guid.NewGuid().ToString("N");
     public string Url { get; init; } = string.Empty;
+    public bool IsInstagram { get; init; }
+    public InstagramBrowser InstagramBrowser { get; init; } = InstagramBrowser.Chrome;
+    public string? InstagramCookieFile { get; init; }
+    public string? InstagramCookieTempDir { get; init; }
     public bool NoPlaylist { get; init; }
+    public int? PlaylistItemIndex { get; init; }
+    public string? InstagramMediaPk { get; init; }
     public string Quality { get; init; } = "1080p";
     public string Format { get; init; } = "mp4";
     public string SaveFolder { get; init; } = string.Empty;
@@ -28,7 +34,39 @@ public sealed class DownloadItem : INotifyPropertyChanged
     }
     public string Thumbnail { get; set; } = string.Empty;
     public string ErrorMessage { get; set; } = string.Empty;
+    public string DiagnosticsLog { get; set; } = string.Empty;
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+
+    public bool CanCopyDiagnostics =>
+        Status == DownloadStatus.Failed && !string.IsNullOrWhiteSpace(DiagnosticsLog);
+
+    public void AppendDiagnostic(string message)
+    {
+        var line = $"[{DateTime.Now:HH:mm:ss}] {message}";
+        DiagnosticsLog = string.IsNullOrWhiteSpace(DiagnosticsLog) ? line : DiagnosticsLog + Environment.NewLine + line;
+        NotifyDiagnosticsChanged();
+    }
+
+    public string BuildDiagnosticReport()
+    {
+        var lines = new List<string>
+        {
+            "DownloadMaster diagnostic report",
+            $"URL: {Url}",
+            $"Media PK: {InstagramMediaPk ?? "(none)"}",
+            $"Slide/img_index: {(PlaylistItemIndex?.ToString() ?? "(all)")}",
+            $"Save folder: {SaveFolder}",
+            $"Status: {Status}",
+            $"Error: {ErrorMessage}",
+            string.Empty,
+            "Steps:",
+            DiagnosticsLog
+        };
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    public void NotifyDiagnosticsChanged() => OnPropertyChanged(nameof(CanCopyDiagnostics));
 
     public string Title
     {
@@ -49,6 +87,7 @@ public sealed class DownloadItem : INotifyPropertyChanged
             OnPropertyChanged(nameof(IsCompleted));
             OnPropertyChanged(nameof(CanPlay));
             OnPropertyChanged(nameof(CanOpenFolder));
+            OnPropertyChanged(nameof(CanCopyDiagnostics));
         }
     }
 

@@ -19,6 +19,9 @@ VideoDownloader/
 ├── .gitignore                  # Git ignore rules (binaries, build output)
 │
 ├── docs/
+│   ├── img1.png                # README screenshot (video tab)
+│   ├── img2.png                # README screenshot (Instagram tab)
+│   ├── release-notes-template.md
 │   └── STRUCTURE.md            # This file
 │
 ├── start.bat                   # Build Release x64 + run app

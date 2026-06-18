@@ -16,11 +16,22 @@ public sealed partial class YtDlpService
         ["720p"] = 720, ["1080p"] = 1080, ["1440p"] = 1440, ["2160p"] = 2160, ["best"] = 9999
     };
 
-    public async Task<VideoInfo> FetchInfoAsync(string url, string preferredFormat = "mp4", CancellationToken ct = default)
+    public async Task<VideoInfo> FetchInfoAsync(
+        string url,
+        string preferredFormat = "mp4",
+        InstagramCookieSession? instagram = null,
+        bool noPlaylist = false,
+        CancellationToken ct = default,
+        string? cookieFile = null,
+        int? playlistItemIndex = null)
     {
         EnsureYtDlp();
-        var args = BuildBaseArgs() + $" --dump-single-json --skip-download \"{url}\"";
+        var args = BuildBaseArgs(instagram, noPlaylist, cookieFile, url);
+        if (playlistItemIndex is int index)
+            args += $" --playlist-items {index}";
+        args += $" --dump-single-json --skip-download \"{url}\"";
         var json = await RunCaptureAsync(args, ct);
+        json = ExtractJsonPayload(json);
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
@@ -28,7 +39,7 @@ public sealed partial class YtDlpService
         {
             Title = root.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "",
             Thumbnail = root.TryGetProperty("thumbnail", out var th) ? th.GetString() ?? "" : "",
-            Duration = root.TryGetProperty("duration", out var d) ? d.GetInt32() : 0,
+            Duration = TryReadDurationSeconds(root),
             Uploader = root.TryGetProperty("uploader", out var u) ? u.GetString() ?? "" : "",
         };
 
@@ -58,7 +69,8 @@ public sealed partial class YtDlpService
         DownloadItem item,
         AppSettings settings,
         IProgress<DownloadProgressReport>? progress,
-        CancellationToken ct)
+        InstagramCookieSession? instagram = null,
+        CancellationToken ct = default)
     {
         EnsureYtDlp();
         Directory.CreateDirectory(item.SaveFolder);
@@ -69,9 +81,22 @@ public sealed partial class YtDlpService
             outTemplate = Path.GetFileNameWithoutExtension(outTemplate) + ".%(ext)s";
 
         var output = Path.Combine(item.SaveFolder, outTemplate);
-        var format = $"bestvideo[height<={height}]+bestaudio/best[height<={height}]/best";
+        if (item.IsInstagram && !item.NoPlaylist && item.PlaylistItemIndex is null)
+        {
+            var baseName = Path.GetFileNameWithoutExtension(output);
+            var dir = Path.GetDirectoryName(output) ?? item.SaveFolder;
+            output = Path.Combine(dir, baseName + "_%(playlist_index)02d.%(ext)s");
+        }
 
-        var args = new StringBuilder(BuildBaseArgs());
+        var format = item.IsInstagram
+            ? "best[ext=mp4]/best[ext=jpg]/best[ext=webp]/best[ext=png]/best"
+            : $"bestvideo[height<={height}]+bestaudio/best[height<={height}]/best";
+
+        var args = new StringBuilder(BuildBaseArgs(instagram, item.NoPlaylist, item.InstagramCookieFile, item.Url));
+        if (item.IsInstagram)
+            args.Append(" --ignore-no-formats-error");
+        if (item.PlaylistItemIndex is int playlistItem)
+            args.Append($" --playlist-items {playlistItem}");
         args.Append(" --newline --no-warnings --continue");
         args.Append($" -f \"{format}\"");
         args.Append($" -o \"{output}\"");
@@ -84,11 +109,53 @@ public sealed partial class YtDlpService
         await RunWithProgressAsync(args.ToString(), item, progress, ct);
     }
 
-    private static string BuildBaseArgs()
+    private static int TryReadDurationSeconds(JsonElement root)
+    {
+        if (!root.TryGetProperty("duration", out var duration))
+            return 0;
+
+        if (duration.TryGetDouble(out var seconds))
+            return (int)Math.Round(seconds);
+
+        if (duration.TryGetInt32(out var whole))
+            return whole;
+
+        return 0;
+    }
+
+    private static string ExtractJsonPayload(string output)
+    {
+        if (string.IsNullOrWhiteSpace(output))
+            return output;
+
+        var start = output.IndexOf('{');
+        var end = output.LastIndexOf('}');
+        if (start >= 0 && end > start)
+            return output[start..(end + 1)];
+
+        return output.Trim();
+    }
+
+    private static string BuildBaseArgs(
+        InstagramCookieSession? instagram = null,
+        bool noPlaylist = false,
+        string? cookieFile = null,
+        string? url = null)
     {
         var sb = new StringBuilder();
         if (ToolLocator.FfmpegFolder is not null)
             sb.Append($" --ffmpeg-location \"{ToolLocator.FfmpegFolder}\"");
+        if (instagram is not null)
+            sb.Append(instagram.GetYtDlpArguments());
+        else if (!string.IsNullOrWhiteSpace(cookieFile))
+            sb.Append($" --cookies \"{cookieFile}\"");
+        if (noPlaylist)
+            sb.Append(" --no-playlist");
+        if (instagram is not null || (!string.IsNullOrWhiteSpace(url) && InstagramUrlHelper.IsInstagramUrl(url)))
+        {
+            sb.Append(" --ignore-no-formats-error");
+            sb.Append(" --referer \"https://www.instagram.com/\"");
+        }
         return sb.ToString();
     }
 

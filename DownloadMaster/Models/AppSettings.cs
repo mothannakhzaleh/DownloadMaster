@@ -16,6 +16,8 @@ public sealed class AppSettings
     public bool ClipboardMonitor { get; set; } = true;
     public AppTheme Theme { get; set; } = AppTheme.Dark;
     public AppLanguage Language { get; set; } = AppLanguage.English;
+    public InstagramBrowser InstagramBrowser { get; set; } = InstagramBrowser.Chrome;
+    public string InstagramCookiesPath { get; set; } = string.Empty;
 }
 
 public sealed class VideoInfo

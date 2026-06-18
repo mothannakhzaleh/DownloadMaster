@@ -28,3 +28,9 @@ public enum AppLanguage
     Swedish,
     Norwegian
 }
+
+public enum InstagramBrowser
+{
+    Chrome,
+    Edge
+}

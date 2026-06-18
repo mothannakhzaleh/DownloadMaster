@@ -4,12 +4,23 @@ Native Windows video download manager — **one app, no Python/Node/CMD setup**.
 
 Built with **.NET 8 WPF**, powered by bundled **yt-dlp** and **FFmpeg**.
 
+[![Release](https://img.shields.io/github/v/release/mothannakhzaleh/DownloadMaster?label=latest)](https://github.com/mothannakhzaleh/DownloadMaster/releases)
+
+---
+
+## Screenshots
+
+| Video downloads | Instagram browse |
+|-----------------|------------------|
+| ![Video tab](docs/img1.png) | ![Instagram tab](docs/img2.png) |
+
 ---
 
 ## Author
 
-**Copyright © 2026 [mothannakh](https://satisfy.live/)**
+**Copyright © 2026 [mothannakh](https://github.com/mothannakhzaleh/DownloadMaster)**
 
+- GitHub: [mothannakhzaleh/DownloadMaster](https://github.com/mothannakhzaleh/DownloadMaster)
 - Website: [https://satisfy.live/](https://satisfy.live/)
 - YouTube: [@ToPSourceDevelopment](https://www.youtube.com/@ToPSourceDevelopment)
 
@@ -28,12 +39,23 @@ This project is intended for **public open-source release**. Bundled tool binari
 
 ## Features
 
-- Download from YouTube, X/Twitter, and 1000+ sites via yt-dlp
+### Video (yt-dlp)
+- Download from YouTube, X/Twitter, and 1000+ sites
 - Fetch preview with auto-detected quality and format
 - Download queue with progress, speed, and ETA
 - Playlist support with selectable video list
 - Per-download save folder picker
 - **Open folder** and **Play** when a download completes
+
+### Instagram
+- Paste a **post/reel/story** link and download directly
+- Paste a **@username** or profile link and **Fetch** to browse stories, highlights, and posts
+- **Thumbnails** in the browse list · expand/collapse sections · select all
+- **Carousel & highlight** rows — download one item or a whole batch
+- **Cookies**: sync from Chrome/Edge, paste from DevTools, or **clear** saved session
+- **Copy details** on failed downloads for troubleshooting
+
+### App
 - Dark / Light themes
 - English + Arabic (RTL) UI
 - Standalone publish folder (single `.exe`, no .NET install required)
@@ -51,14 +73,21 @@ This project is intended for **public open-source release**. Bundled tool binari
 
 ## Quick start
 
-### 1. Clone the repository
+### Option A — Download release (recommended)
+
+1. Open [Releases](https://github.com/mothannakhzaleh/DownloadMaster/releases) and download the latest `DownloadMaster-v*-win-x64.zip`
+2. Extract anywhere and run `DownloadMaster.exe`
+
+### Option B — Build from source
+
+#### 1. Clone the repository
 
 ```bash
 git clone https://github.com/mothannakhzaleh/DownloadMaster.git
 cd DownloadMaster
 ```
 
-### 2. Install bundled tools (required once)
+#### 2. Install bundled tools (required once)
 
 ```bat
 setup-tools.bat
@@ -74,7 +103,7 @@ DownloadMaster\tools\
     └── ffprobe.exe
 ```
 
-### 3. Run
+#### 3. Run
 
 ```bat
 start.bat
@@ -102,13 +131,21 @@ Requires [GitHub CLI](https://cli.github.com/) (`gh auth login`).
 release-github.bat
 ```
 
-Uses `Version` from `DownloadMaster\DownloadMaster.csproj` (e.g. `1.0.0` → tag `v1.0.0`). Optional override:
+**Version is read automatically** from `DownloadMaster\DownloadMaster.csproj` (`<Version>` → tag `v1.1.0`). If that tag already exists on GitHub, the script **bumps the patch version** in the csproj until a free tag is found.
+
+Optional override (skips auto-bump):
 
 ```bat
-release-github.bat 1.0.1
+release-github.bat 1.1.0
 ```
 
-Creates `artifacts\DownloadMaster-v1.0.0-win-x64.zip`, uploads it to a new GitHub release, then deletes local zip, notes, `publish\`, and `artifacts\` folders.
+Non-interactive (for scripts):
+
+```bat
+release-github.bat --yes
+```
+
+Creates `artifacts\DownloadMaster-v1.1.0-win-x64.zip`, uploads it to a new GitHub release with **last updated** date and changelog from `docs\release-notes-template.md`, then cleans local zip, notes, `publish\`, and `artifacts\`.
 
 ### Publish output
 
@@ -142,13 +179,20 @@ Stored at:
 %AppData%\DownloadMaster\settings.json
 ```
 
-Includes default save folder, theme, language, and max concurrent downloads.
+Includes default save folder, theme, language, max concurrent downloads, and Instagram cookie path.
+
+Instagram cookies (never committed to Git) are stored at:
+
+```
+%AppData%\DownloadMaster\instagram-cookies.txt
+```
 
 ---
 
 ## Project documentation
 
 - [docs/STRUCTURE.md](docs/STRUCTURE.md) — full repository layout and architecture
+- [docs/release-notes-template.md](docs/release-notes-template.md) — GitHub release notes template
 - [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) — licenses for all dependencies and bundled tools
 
 ---
@@ -163,7 +207,10 @@ VideoDownloader/
 ├── THIRD_PARTY_LICENSES.md
 ├── README.md
 ├── docs/
-│   └── STRUCTURE.md
+│   ├── img1.png              # README screenshot (video tab)
+│   ├── img2.png              # README screenshot (Instagram tab)
+│   ├── STRUCTURE.md
+│   └── release-notes-template.md
 ├── DownloadMaster/           # WPF application
 │   ├── Assets/
 │   ├── Models/
@@ -175,7 +222,8 @@ VideoDownloader/
 ├── setup-tools.bat
 ├── start.bat
 ├── build.bat
-└── publish-standalone.bat
+├── publish-standalone.bat
+└── release-github.bat
 ```
 
 ---

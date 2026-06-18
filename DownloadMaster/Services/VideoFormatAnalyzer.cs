@@ -26,18 +26,24 @@ public static class VideoFormatAnalyzer
             var vcodec = fmt.TryGetProperty("vcodec", out var vc) ? vc.GetString() : null;
             var hasVideo = vcodec is not null and not "none";
 
-            if (hasVideo && fmt.TryGetProperty("height", out var h) && h.TryGetInt32(out var height) && height > 0)
-                heights.Add(height);
-
             if (fmt.TryGetProperty("ext", out var extProp))
             {
                 var ext = extProp.GetString();
-                if (string.IsNullOrEmpty(ext)) continue;
-                if (ext.Equals("m4a", StringComparison.OrdinalIgnoreCase))
-                    exts.Add("mp4");
-                else if (ext is "mp4" or "mkv" or "webm")
-                    exts.Add(ext);
+                if (!string.IsNullOrEmpty(ext))
+                {
+                    if (ext.Equals("jpeg", StringComparison.OrdinalIgnoreCase))
+                        exts.Add("jpg");
+                    else if (ext is "jpg" or "webp" or "png")
+                        exts.Add(ext);
+                    else if (ext.Equals("m4a", StringComparison.OrdinalIgnoreCase))
+                        exts.Add("mp4");
+                    else if (ext is "mp4" or "mkv" or "webm")
+                        exts.Add(ext);
+                }
             }
+
+            if (hasVideo && fmt.TryGetProperty("height", out var h) && h.TryGetInt32(out var height) && height > 0)
+                heights.Add(height);
         }
 
         if (heights.Count == 0)
@@ -45,8 +51,19 @@ public static class VideoFormatAnalyzer
             info.MaxHeight = 0;
             info.RecommendedQuality = "best";
             info.AvailableQualities = ["best"];
-            info.AvailableFormats = exts.Count > 0 ? [.. exts, "mp3"] : ["mp3"];
-            info.RecommendedFormat = info.AvailableFormats.Contains("mp3") ? "mp3" : info.AvailableFormats[0];
+            if (exts.Count > 0)
+            {
+                info.AvailableFormats = [.. exts];
+                info.RecommendedFormat = exts.Contains("jpg", StringComparer.OrdinalIgnoreCase)
+                    ? "jpg"
+                    : exts.First();
+            }
+            else
+            {
+                info.AvailableFormats = ["jpg", "mp3"];
+                info.RecommendedFormat = "jpg";
+            }
+
             return;
         }
 
