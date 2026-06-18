@@ -1,0 +1,123 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+publish/
+out/
+artifacts/
+
+# Visual Studio / Rider
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+.idea/
+*.DotSettings.user
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+project.lock.json
+project.fragment.lock.json
+
+# .NET
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+*.tlog
+*.idb
+*.iobj
+*.ipdb
+*.ilk
+*.meta
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Keep source project files
+!**/*.csproj
+!**/*.sln
+!**/*.slnx
+
+# WPF / MSBuild generated (under obj — already covered by obj/)
+*_i.c
+*_p.c
+*_h.h
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+coverage/
+*.coverage
+*.coveragexml
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows installer / packages
+*.msi
+*.msix
+*.appx
+
+# Secrets & local config (never commit)
+*.env
+.env.*
+secrets.json
+appsettings.Development.json
+**/launchSettings.json
+
+# Bundled tool binaries (large; restore with setup-tools.bat)
+DownloadMaster/tools/yt-dlp.exe
+DownloadMaster/tools/ffmpeg/ffmpeg.exe
+DownloadMaster/tools/ffmpeg/ffprobe.exe
+**/tools/yt-dlp.exe
+**/tools/ffmpeg/ffmpeg.exe
+**/tools/ffmpeg/ffprobe.exe
+
+# Optional: keep tools folder structure
+!DownloadMaster/tools/README.txt
+!DownloadMaster/tools/ffmpeg/.gitkeep
+
+# Debug configurations (project uses Release x64 only)
+**/bin/Debug/
+**/obj/Debug/
+**/bin/x64/Debug/
+**/obj/x64/Debug/
+
+# Publish profiles (may contain local paths)
+*.pubxml
+*.publishproj
+
+# Cursor / agent (local IDE)
+.cursor/
+agent-transcripts/
+
+# JetBrains
+*.sln.iml
+
+# Backup files
+*.orig
+*.rej

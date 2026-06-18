@@ -1,0 +1,61 @@
+<Window x:Class="DownloadMaster.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings"
+        Icon="Assets/app.ico"
+        Height="420" Width="640"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource BackgroundBrush}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Name="HeaderText" Grid.Row="0" Text="Settings" FontSize="22" FontWeight="Bold"
+                   Foreground="{DynamicResource TextPrimaryBrush}" Margin="24,24,24,12" />
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="24,0">
+            <StackPanel>
+                <TextBlock x:Name="SavePathLabel" Text="Default save folder" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="SavePathBox" />
+                    <Button Grid.Column="1" Content="..." Margin="8,0,0,0" Style="{StaticResource SecondaryButton}" Padding="12,10" Click="BrowseSavePath_Click" />
+                </Grid>
+
+                <TextBlock x:Name="MaxConcurrentLabel" Text="Max concurrent downloads" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                <ComboBox x:Name="ConcurrentCombo" Margin="0,0,0,14" SelectedIndex="2">
+                    <ComboBoxItem Content="1" />
+                    <ComboBoxItem Content="2" />
+                    <ComboBoxItem Content="3" />
+                    <ComboBoxItem Content="4" />
+                    <ComboBoxItem Content="5" />
+                </ComboBox>
+
+                <TextBlock x:Name="ThemeLabel" Text="Theme" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                <ComboBox x:Name="ThemeCombo" Margin="0,0,0,14" SelectedIndex="0" />
+
+                <TextBlock x:Name="LanguageLabel" Text="Language" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                <ComboBox x:Name="LanguageCombo" Margin="0,0,0,8" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,1,0,0" Padding="24,16">
+            <Grid>
+                <Button x:Name="ResetButton" Content="Reset defaults" Style="{StaticResource SecondaryButton}"
+                        HorizontalAlignment="Left" Click="ResetButton_Click" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="CancelButton" Content="Cancel" Style="{StaticResource SecondaryButton}" Margin="0,0,10,0" Click="CancelButton_Click" />
+                    <Button x:Name="SaveButton" Content="Save" Style="{StaticResource PrimaryButton}" Click="SaveButton_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
