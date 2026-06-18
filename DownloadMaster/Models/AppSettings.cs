@@ -18,6 +18,7 @@ public sealed class AppSettings
     public AppLanguage Language { get; set; } = AppLanguage.English;
     public InstagramBrowser InstagramBrowser { get; set; } = InstagramBrowser.Chrome;
     public string InstagramCookiesPath { get; set; } = string.Empty;
+    public int FileDownloadConnections { get; set; } = 8;
 }
 
 public sealed class VideoInfo

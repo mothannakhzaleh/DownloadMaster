@@ -10,6 +10,10 @@
 |-----------------|------------------|
 | ![Video tab](docs/img1.png) | ![Instagram tab](docs/img2.png) |
 
+| Files (direct download) | Video Convert | Image Convert |
+|-------------------------|---------------|---------------|
+| ![Files tab](docs/img3.png) | ![Video Convert](docs/img4.png) | ![Image Convert](docs/img5.png) |
+
 ---
 
 ## Author
@@ -50,6 +54,17 @@ This project is intended for **public open-source release**. Bundled tool binari
 - **Carousel & highlight** rows — download one item or a whole batch
 - **Cookies**: sync from Chrome/Edge, paste from DevTools, or **clear** saved session
 - **Copy details** on failed downloads for troubleshooting
+
+### Files (direct download)
+- Paste a **direct http/https** file URL or public **Google Drive** link
+- Multi-connection download with **pause** and **resume**
+- Optional file name and connection count · `.part` resume state on disk
+
+### Convert
+- **Video Convert** — convert format, optimize in place, **GIF**, or **frame textures** (FFmpeg)
+- **Image Convert** — single image or **folder batch**; PNG, JPEG, WebP, BMP, TIFF, GIF, TGA, DDS
+- **PNG palette optimization** — 16–256 colors, optional dither, transparency preserved
+- Preview, drag-and-drop, per-file results; download queue hidden on this tab
 
 ### App
 - Dark / Light themes
@@ -188,6 +203,7 @@ Instagram cookies (never committed to Git) are stored at:
 ## Project documentation
 
 - [docs/STRUCTURE.md](docs/STRUCTURE.md) — full repository layout and architecture
+- [docs/TODO.md](docs/TODO.md) — planned features (e.g. MEGA support)
 - [docs/release-notes-template.md](docs/release-notes-template.md) — GitHub release notes template
 - [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) — licenses for all dependencies and bundled tools
 
@@ -205,6 +221,9 @@ VideoDownloader/
 ├── docs/
 │   ├── img1.png              # README screenshot (video tab)
 │   ├── img2.png              # README screenshot (Instagram tab)
+│   ├── img3.png              # README screenshot (Files tab)
+│   ├── img4.png              # README screenshot (Video Convert)
+│   ├── img5.png              # README screenshot (Image Convert)
 │   ├── STRUCTURE.md
 │   └── release-notes-template.md
 ├── DownloadMaster/           # WPF application

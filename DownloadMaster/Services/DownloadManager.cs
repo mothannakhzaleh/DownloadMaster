@@ -16,6 +16,8 @@ public sealed class DownloadManager
 
     private readonly YtDlpService _ytDlp = new();
     private readonly InstagramDirectDownloadService _instagramDirect = new();
+    private readonly HttpFileDownloadService _httpFile = new();
+    private readonly DownloadPauseRegistry _pauseRegistry = new();
 
     private readonly SettingsService _settings;
 
@@ -75,6 +77,64 @@ public sealed class DownloadManager
 
         }
 
+        else if (item.Status is DownloadStatus.Queued or DownloadStatus.Paused)
+
+        {
+
+            item.Status = DownloadStatus.Cancelled;
+
+            item.StatusText = "Cancelled";
+
+        }
+
+    }
+
+
+
+    public void Pause(DownloadItem item)
+
+    {
+
+        if (item.Kind != DownloadKind.DirectFile || item.Status != DownloadStatus.Downloading)
+
+            return;
+
+        _pauseRegistry.Pause(item.Id);
+
+        item.Status = DownloadStatus.Paused;
+
+        item.StatusText = "Paused";
+
+    }
+
+
+
+    public void Resume(DownloadItem item)
+
+    {
+
+        if (item.Kind != DownloadKind.DirectFile)
+
+            return;
+
+        if (item.Status == DownloadStatus.Paused)
+
+        {
+
+            _pauseRegistry.Resume(item.Id);
+
+            item.Status = DownloadStatus.Downloading;
+
+            item.StatusText = "Downloading...";
+
+            return;
+
+        }
+
+        if (item.Status is DownloadStatus.Failed or DownloadStatus.Cancelled)
+
+            _ = EnqueueAsync(item);
+
     }
 
 
@@ -89,49 +149,13 @@ public sealed class DownloadManager
 
         _tokens[item.Id] = linked;
 
+        _pauseRegistry.Register(item.Id);
+
 
 
         try
 
         {
-
-            item.Status = DownloadStatus.Fetching;
-
-            item.StatusText = "Fetching info...";
-
-
-
-            if (item.IsInstagram && InstagramDirectDownloadService.CanHandle(item.Url))
-            {
-                if (string.IsNullOrWhiteSpace(item.Title))
-                    item.Title = FormatHelpers.SanitizeFileName(Path.GetFileName(item.Url.TrimEnd('/')));
-            }
-            else if (string.IsNullOrWhiteSpace(item.Title) || item.IsInstagram)
-            {
-                var info = await _ytDlp.FetchInfoAsync(
-                    item.Url,
-                    item.IsInstagram ? "jpg" : _settings.Current.PreferredFormat,
-                    instagram: null,
-                    item.NoPlaylist,
-                    linked.Token,
-                    cookieFile: item.InstagramCookieFile,
-                    playlistItemIndex: item.PlaylistItemIndex);
-
-                if (!string.IsNullOrWhiteSpace(info.Title))
-                    item.Title = info.Title;
-                else if (string.IsNullOrWhiteSpace(item.Title))
-                    item.Title = FormatHelpers.SanitizeFileName(Path.GetFileName(item.Url.TrimEnd('/')));
-
-                item.Thumbnail = info.Thumbnail;
-            }
-
-
-
-            item.Status = DownloadStatus.Downloading;
-
-            item.StatusText = "Downloading...";
-
-
 
             var progress = new Progress<DownloadProgressReport>(r =>
 
@@ -149,88 +173,111 @@ public sealed class DownloadManager
 
 
 
-            var attempts = Math.Max(1, _settings.Current.AutoRetryAttempts);
-
-            Exception? lastError = null;
-
-
-
-            for (var attempt = 1; attempt <= attempts; attempt++)
+            if (item.Kind == DownloadKind.DirectFile)
 
             {
 
-                try
+                item.Status = DownloadStatus.Fetching;
 
-                {
+                item.StatusText = "Probing file...";
 
-                    if (item.IsInstagram && InstagramDirectDownloadService.CanHandle(item.Url))
-                    {
-                        await _instagramDirect.DownloadAsync(item, progress, linked.Token);
-                    }
-                    else
-                    {
-                        await _ytDlp.DownloadAsync(item, _settings.Current, progress, instagram: null, linked.Token);
-                    }
+                item.Status = DownloadStatus.Downloading;
 
-                    item.Status = DownloadStatus.Completed;
+                item.StatusText = "Downloading...";
 
-                    item.Progress = 100;
+                await RunWithRetryAsync(item, async () =>
 
-                    item.SpeedText = string.Empty;
+                    await _httpFile.DownloadAsync(
 
-                    item.EtaText = string.Empty;
+                        item,
 
-                    item.StatusText = "Completed";
+                        _settings.Current,
 
-                    return;
+                        progress,
 
-                }
+                        () => _pauseRegistry.WaitIfPausedAsync(item.Id, linked.Token),
 
-                catch (OperationCanceledException)
+                        linked.Token));
 
-                {
-
-                    if (linked.IsCancellationRequested)
-
-                    {
-
-                        item.Status = DownloadStatus.Cancelled;
-
-                        item.StatusText = "Cancelled";
-
-                        return;
-
-                    }
-
-                }
-
-                catch (Exception ex)
-
-                {
-
-                    lastError = ex;
-
-                    if (IsNonRetryableError(ex.Message))
-
-                        break;
-
-
-
-                    item.StatusText = $"Retry {attempt}/{attempts}...";
-
-                    await Task.Delay(TimeSpan.FromSeconds(attempt * 2), linked.Token);
-
-                }
+                return;
 
             }
 
 
 
-            item.Status = DownloadStatus.Failed;
+            item.Status = DownloadStatus.Fetching;
 
-            item.ErrorMessage = lastError?.Message ?? "Unknown error";
-            item.AppendDiagnostic($"Failed: {item.ErrorMessage}");
-            item.StatusText = "Failed";
+            item.StatusText = "Fetching info...";
+
+
+
+            if (item.IsInstagram && InstagramDirectDownloadService.CanHandle(item.Url))
+
+            {
+
+                if (string.IsNullOrWhiteSpace(item.Title))
+
+                    item.Title = FormatHelpers.SanitizeFileName(Path.GetFileName(item.Url.TrimEnd('/')));
+
+            }
+
+            else if (string.IsNullOrWhiteSpace(item.Title) || item.IsInstagram)
+
+            {
+
+                var info = await _ytDlp.FetchInfoAsync(
+
+                    item.Url,
+
+                    item.IsInstagram ? "jpg" : _settings.Current.PreferredFormat,
+
+                    instagram: null,
+
+                    item.NoPlaylist,
+
+                    linked.Token,
+
+                    cookieFile: item.InstagramCookieFile,
+
+                    playlistItemIndex: item.PlaylistItemIndex);
+
+
+
+                if (!string.IsNullOrWhiteSpace(info.Title))
+
+                    item.Title = info.Title;
+
+                else if (string.IsNullOrWhiteSpace(item.Title))
+
+                    item.Title = FormatHelpers.SanitizeFileName(Path.GetFileName(item.Url.TrimEnd('/')));
+
+
+
+                item.Thumbnail = info.Thumbnail;
+
+            }
+
+
+
+            item.Status = DownloadStatus.Downloading;
+
+            item.StatusText = "Downloading...";
+
+
+
+            await RunWithRetryAsync(item, async () =>
+
+            {
+
+                if (item.IsInstagram && InstagramDirectDownloadService.CanHandle(item.Url))
+
+                    await _instagramDirect.DownloadAsync(item, progress, linked.Token);
+
+                else
+
+                    await _ytDlp.DownloadAsync(item, _settings.Current, progress, instagram: null, linked.Token);
+
+            });
 
         }
 
@@ -238,9 +285,15 @@ public sealed class DownloadManager
 
         {
 
-            item.Status = DownloadStatus.Cancelled;
+            if (item.Status != DownloadStatus.Paused)
 
-            item.StatusText = "Cancelled";
+            {
+
+                item.Status = DownloadStatus.Cancelled;
+
+                item.StatusText = "Cancelled";
+
+            }
 
         }
 
@@ -252,6 +305,8 @@ public sealed class DownloadManager
 
             item.ErrorMessage = ex.Message;
 
+            item.AppendDiagnostic($"Failed: {ex.Message}");
+
             item.StatusText = "Failed";
 
         }
@@ -262,6 +317,8 @@ public sealed class DownloadManager
 
             CleanupInstagramCookies(item);
 
+            _pauseRegistry.Unregister(item.Id);
+
             _tokens.TryRemove(item.Id, out _);
 
             linked.Dispose();
@@ -269,6 +326,86 @@ public sealed class DownloadManager
             _slotSemaphore.Release();
 
         }
+
+    }
+
+
+
+    private async Task RunWithRetryAsync(DownloadItem item, Func<Task> action)
+
+    {
+
+        var attempts = Math.Max(1, _settings.Current.AutoRetryAttempts);
+
+        Exception? lastError = null;
+
+
+
+        for (var attempt = 1; attempt <= attempts; attempt++)
+
+        {
+
+            try
+
+            {
+
+                await action();
+
+                item.Status = DownloadStatus.Completed;
+
+                item.Progress = 100;
+
+                item.SpeedText = string.Empty;
+
+                item.EtaText = string.Empty;
+
+                item.StatusText = "Completed";
+
+                return;
+
+            }
+
+            catch (OperationCanceledException)
+
+            {
+
+                if (item.Status == DownloadStatus.Paused)
+
+                    throw;
+
+                throw;
+
+            }
+
+            catch (Exception ex)
+
+            {
+
+                lastError = ex;
+
+                if (IsNonRetryableError(ex.Message))
+
+                    break;
+
+
+
+                item.StatusText = $"Retry {attempt}/{attempts}...";
+
+                await Task.Delay(TimeSpan.FromSeconds(attempt * 2));
+
+            }
+
+        }
+
+
+
+        item.Status = DownloadStatus.Failed;
+
+        item.ErrorMessage = lastError?.Message ?? "Unknown error";
+
+        item.AppendDiagnostic($"Failed: {item.ErrorMessage}");
+
+        item.StatusText = "Failed";
 
     }
 
@@ -321,5 +458,4 @@ public sealed class DownloadManager
         || message.Contains("No Instagram cookies found", StringComparison.OrdinalIgnoreCase);
 
 }
-
 

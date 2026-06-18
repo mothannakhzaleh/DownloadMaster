@@ -1,5 +1,12 @@
 namespace DownloadMaster.Models;
 
+public enum DownloadKind
+{
+    Video,
+    Instagram,
+    DirectFile
+}
+
 public enum DownloadStatus
 {
     Queued,

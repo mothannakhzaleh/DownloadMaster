@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Settings"
         Icon="Assets/app.ico"
-        Height="420" Width="640"
+        Height="480" Width="640"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="{DynamicResource BackgroundBrush}">
@@ -36,6 +36,14 @@
                     <ComboBoxItem Content="3" />
                     <ComboBoxItem Content="4" />
                     <ComboBoxItem Content="5" />
+                </ComboBox>
+
+                <TextBlock x:Name="FileDownloadConnectionsLabel" Text="File download connections" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                <ComboBox x:Name="FileDownloadConnectionsCombo" Margin="0,0,0,14" SelectedIndex="1">
+                    <ComboBoxItem Content="4" />
+                    <ComboBoxItem Content="8" />
+                    <ComboBoxItem Content="12" />
+                    <ComboBoxItem Content="16" />
                 </ComboBox>
 
                 <TextBlock x:Name="ThemeLabel" Text="Theme" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6" />

@@ -42,6 +42,7 @@ public partial class MainWindow : Window
         UpdateQueueEmptyState();
         ApplyDownloadQueueLayout();
         ApplyInstagramBrowseLayout();
+        UpdateDownloadQueueVisibility();
 
         QualityCombo.ItemsSource = VideoFormatAnalyzer.DefaultQualities;
         QualityCombo.SelectedItem = _settings.Current.DefaultQuality;
@@ -51,6 +52,8 @@ public partial class MainWindow : Window
         BindLanguageCombo();
         BindInstagramBrowserCombo();
         InstagramSavePathBox.Text = SavePathBox.Text;
+        FileDownloadSavePathBox.Text = SavePathBox.Text;
+        FileDownloadConnectionsCombo.SelectedIndex = GetFileConnectionsIndex(_settings.Current.FileDownloadConnections);
         LanguageCombo.SelectedValue = _settings.Current.Language;
 
         if (string.IsNullOrWhiteSpace(_settings.Current.InstagramCookiesPath)
@@ -85,6 +88,7 @@ public partial class MainWindow : Window
         if (ToolLocator.HasYtDlp && ToolLocator.HasFfmpeg)
         {
             StatusText.Text = _loc.Get("ToolsReady");
+            VideoConvertorPanel.RefreshFfmpegStatus();
             return;
         }
 
@@ -92,6 +96,7 @@ public partial class MainWindow : Window
         if (!ToolLocator.HasYtDlp) missing.Add(_loc.Get("ToolsMissingYtDlp"));
         if (!ToolLocator.HasFfmpeg) missing.Add(_loc.Get("ToolsMissingFfmpeg"));
         StatusText.Text = string.Join(" · ", missing);
+        VideoConvertorPanel.RefreshFfmpegStatus();
     }
 
     private void ApplyLocalization()
@@ -109,6 +114,17 @@ public partial class MainWindow : Window
         EmptyText.Text = _loc.Get("NoDownloads");
         VideoTab.Header = _loc.Get("TabVideo");
         InstagramTab.Header = _loc.Get("TabInstagram");
+        FileDownloadTab.Header = _loc.Get("TabFileDownload");
+        VideoConvertSubTab.Header = _loc.Get("TabVideoConvert");
+        ImageConvertSubTab.Header = _loc.Get("TabImageConvert");
+        VideoConvertorPanel.ApplyLocalization(_loc);
+        ImageConvertorPanel.ApplyLocalization(_loc);
+        FileDownloadHintText.Text = _loc.Get("FileDownloadHint");
+        FileDownloadButton.Content = _loc.Get("Download");
+        FileDownloadNameLabel.Text = _loc.Get("FileDownloadName");
+        FileDownloadConnectionsLabel.Text = _loc.Get("FileDownloadConnections");
+        FileDownloadSavePathLabel.Text = _loc.Get("SavePath");
+        FileDownloadUrlBox.Tag = _loc.Get("FileDownloadUrlPlaceholder");
         InstagramHintText.Text = _loc.Get("InstagramHint");
         InstagramFetchButton.Content = _loc.Get("Fetch");
         InstagramDownloadButton.Content = _loc.Get("Download");
@@ -142,6 +158,9 @@ public partial class MainWindow : Window
         Resources["PlayLabel"] = _loc.Get("Play");
         Resources["RemoveLabel"] = _loc.Get("Remove");
         Resources["CopyDetailsLabel"] = _loc.Get("CopyDetails");
+        Resources["PauseLabel"] = _loc.Get("Pause");
+        Resources["ResumeLabel"] = _loc.Get("Resume");
+        Resources["RetryLabel"] = _loc.Get("Retry");
         Resources["InstagramDownloadSectionLabel"] = _loc.Get("InstagramDownloadSection");
         Resources["InstagramDownloadOneLabel"] = _loc.Get("InstagramDownloadOne");
     }
@@ -163,11 +182,37 @@ public partial class MainWindow : Window
             ? _loc.Get("DownloadQueue")
             : string.Format(_loc.Get("DownloadQueueCount"), _items.Count);
 
+        UpdateDownloadQueueVisibility();
+    }
+
+    private void SourceTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (e.Source != SourceTabs)
+            return;
+
+        UpdateDownloadQueueVisibility();
+    }
+
+    private void UpdateDownloadQueueVisibility()
+    {
+        var hideQueue = SourceTabs.SelectedItem == ConvertTab;
+        DownloadQueueExpander.Visibility = hideQueue ? Visibility.Collapsed : Visibility.Visible;
+
+        if (hideQueue)
+        {
+            DownloadQueueRow.Height = new GridLength(0);
+            DownloadQueueRow.MinHeight = 0;
+            return;
+        }
+
         ApplyDownloadQueueLayout();
     }
 
     private void ApplyDownloadQueueLayout()
     {
+        if (SourceTabs.SelectedItem == ConvertTab)
+            return;
+
         if (!DownloadQueueExpander.IsExpanded)
         {
             DownloadQueueRow.Height = GridLength.Auto;
@@ -253,6 +298,7 @@ public partial class MainWindow : Window
             DownloadStatus.Cancelled => _loc.Get("StatusCancelled"),
             DownloadStatus.Fetching => _loc.Get("StatusFetching"),
             DownloadStatus.Downloading => _loc.Get("StatusDownloading"),
+            DownloadStatus.Paused => _loc.Get("StatusPaused"),
             DownloadStatus.Queued => _loc.Get("StatusQueued"),
             _ => item.StatusText
         };
@@ -411,6 +457,132 @@ public partial class MainWindow : Window
             if (item is not null) _downloads.Cancel(item);
         }
     }
+
+    private void PauseDownload_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string id })
+        {
+            var item = _items.FirstOrDefault(x => x.Id == id);
+            if (item is not null) _downloads.Pause(item);
+        }
+    }
+
+    private void ResumeDownload_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string id })
+        {
+            var item = _items.FirstOrDefault(x => x.Id == id);
+            if (item is not null)
+            {
+                _downloads.Resume(item);
+                RefreshItemStatusText(item);
+            }
+        }
+    }
+
+    private async void RetryDownload_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string id }) return;
+        var item = _items.FirstOrDefault(x => x.Id == id);
+        if (item is null || !item.CanRetry) return;
+
+        item.ErrorMessage = string.Empty;
+        item.Progress = 0;
+        item.SpeedText = string.Empty;
+        item.EtaText = string.Empty;
+        item.SizeText = string.Empty;
+        item.Status = DownloadStatus.Queued;
+        item.StatusText = _loc.Get("StatusQueued");
+        await _downloads.EnqueueAsync(item);
+    }
+
+    private async void FileDownloadButton_Click(object sender, RoutedEventArgs e)
+    {
+        var url = FileDownloadUrlBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(url))
+            return;
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || uri.Scheme is not ("http" or "https"))
+        {
+            MessageBox.Show(_loc.Get("FileDownloadInvalidUrl"), _loc.Get("TabFileDownload"),
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        try
+        {
+            DirectDownloadLinkResolver.EnsureSupported(url);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, _loc.Get("TabFileDownload"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        try
+        {
+            FileDownloadButton.IsEnabled = false;
+            await AddFileDownloadAsync(url);
+            FileDownloadUrlBox.Clear();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, _loc.Get("TabFileDownload"), MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            FileDownloadButton.IsEnabled = true;
+        }
+    }
+
+    private async Task AddFileDownloadAsync(string url)
+    {
+        var saveFolder = string.IsNullOrWhiteSpace(FileDownloadSavePathBox.Text)
+            ? _settings.Current.DefaultSavePath
+            : FileDownloadSavePathBox.Text.Trim();
+
+        Directory.CreateDirectory(saveFolder);
+
+        var connections = FileDownloadConnectionsCombo.SelectedItem is ComboBoxItem { Content: string text }
+            && int.TryParse(text, out var parsed)
+            ? parsed
+            : _settings.Current.FileDownloadConnections;
+
+        var item = new DownloadItem
+        {
+            Url = url,
+            Kind = DownloadKind.DirectFile,
+            Title = string.IsNullOrWhiteSpace(FileDownloadNameBox.Text)
+                ? url
+                : FileDownloadNameBox.Text.Trim(),
+            DesiredFileName = string.IsNullOrWhiteSpace(FileDownloadNameBox.Text)
+                ? null
+                : FileDownloadNameBox.Text.Trim(),
+            ConnectionCount = connections,
+            SaveFolder = saveFolder
+        };
+
+        _items.Insert(0, item);
+        AttachItemHandlers(item);
+        UpdateQueueEmptyState();
+        await _downloads.EnqueueAsync(item);
+    }
+
+    private void FileDownloadBrowseSavePath_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFolderDialog { Title = _loc.Get("SavePath") };
+        if (dlg.ShowDialog() == true)
+            FileDownloadSavePathBox.Text = dlg.FolderName;
+    }
+
+    private static int GetFileConnectionsIndex(int connections) => connections switch
+    {
+        <= 4 => 0,
+        <= 8 => 1,
+        <= 12 => 2,
+        _ => 3
+    };
 
     private void CopyDownloadDetails_Click(object sender, RoutedEventArgs e)
     {
@@ -966,6 +1138,7 @@ public partial class MainWindow : Window
             Format = "jpg",
             SaveFolder = GetSaveFolder(),
             IsInstagram = true,
+            Kind = DownloadKind.Instagram,
             InstagramBrowser = GetSelectedInstagramBrowser(),
             NoPlaylist = noPlaylist,
             PlaylistItemIndex = playlistItemIndex,
@@ -1213,6 +1386,8 @@ public partial class MainWindow : Window
             _settings.Save(dlg.ResultSettings);
             SavePathBox.Text = dlg.ResultSettings.DefaultSavePath;
             InstagramSavePathBox.Text = dlg.ResultSettings.DefaultSavePath;
+            FileDownloadSavePathBox.Text = dlg.ResultSettings.DefaultSavePath;
+            FileDownloadConnectionsCombo.SelectedIndex = GetFileConnectionsIndex(dlg.ResultSettings.FileDownloadConnections);
             _theme.Apply(dlg.ResultSettings.Theme);
             _loc.SetLanguage(dlg.ResultSettings.Language);
             LanguageCombo.SelectedValue = dlg.ResultSettings.Language;

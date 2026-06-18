@@ -34,6 +34,7 @@ public partial class SettingsWindow : Window
     {
         SavePathBox.Text = s.DefaultSavePath;
         ConcurrentCombo.SelectedIndex = Math.Clamp(s.MaxConcurrentDownloads - 1, 0, 4);
+        FileDownloadConnectionsCombo.SelectedIndex = GetFileConnectionsIndex(s.FileDownloadConnections);
         ThemeCombo.SelectedIndex = s.Theme == AppTheme.Light ? 1 : 0;
         LanguageCombo.SelectedValue = s.Language;
     }
@@ -43,6 +44,7 @@ public partial class SettingsWindow : Window
         HeaderText.Text = _loc.Get("Settings");
         SavePathLabel.Text = _loc.Get("SavePath");
         MaxConcurrentLabel.Text = _loc.Get("MaxConcurrent");
+        FileDownloadConnectionsLabel.Text = _loc.Get("FileDownloadConnections");
         ThemeLabel.Text = _loc.Get("Theme");
         LanguageLabel.Text = _loc.Get("Language");
         SaveButton.Content = _loc.Get("Save");
@@ -69,6 +71,7 @@ public partial class SettingsWindow : Window
         {
             DefaultSavePath = SavePathBox.Text.Trim(),
             MaxConcurrentDownloads = ConcurrentCombo.SelectedIndex + 1,
+            FileDownloadConnections = ParseConnections(FileDownloadConnectionsCombo),
             Theme = ThemeCombo.SelectedIndex == 1 ? AppTheme.Light : AppTheme.Dark,
             Language = LanguageCombo.SelectedValue is AppLanguage lang ? lang : AppLanguage.English,
             SpeedLimitKbps = _original.SpeedLimitKbps,
@@ -77,7 +80,9 @@ public partial class SettingsWindow : Window
             PreferredFormat = _original.PreferredFormat,
             NamingTemplate = _original.NamingTemplate,
             DownloadSubtitles = _original.DownloadSubtitles,
-            ClipboardMonitor = _original.ClipboardMonitor
+            ClipboardMonitor = _original.ClipboardMonitor,
+            InstagramBrowser = _original.InstagramBrowser,
+            InstagramCookiesPath = _original.InstagramCookiesPath
         };
         DialogResult = true;
         Close();
@@ -94,7 +99,8 @@ public partial class SettingsWindow : Window
         LoadSettings(new AppSettings
         {
             DefaultSavePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "DownloadMaster"),
-            MaxConcurrentDownloads = _original.MaxConcurrentDownloads,
+            MaxConcurrentDownloads = 3,
+            FileDownloadConnections = 8,
             Theme = _original.Theme,
             Language = _original.Language,
             SpeedLimitKbps = _original.SpeedLimitKbps,
@@ -103,9 +109,24 @@ public partial class SettingsWindow : Window
             PreferredFormat = _original.PreferredFormat,
             NamingTemplate = _original.NamingTemplate,
             DownloadSubtitles = _original.DownloadSubtitles,
-            ClipboardMonitor = _original.ClipboardMonitor
+            ClipboardMonitor = _original.ClipboardMonitor,
+            InstagramBrowser = _original.InstagramBrowser,
+            InstagramCookiesPath = _original.InstagramCookiesPath
         });
     }
+
+    private static int ParseConnections(ComboBox combo) =>
+        combo.SelectedItem is ComboBoxItem { Content: string text } && int.TryParse(text, out var value)
+            ? value
+            : 8;
+
+    private static int GetFileConnectionsIndex(int connections) => connections switch
+    {
+        <= 4 => 0,
+        <= 8 => 1,
+        <= 12 => 2,
+        _ => 3
+    };
 
     private sealed record LanguageOption(AppLanguage Language, string DisplayName);
 }

@@ -14,9 +14,11 @@ public sealed class DownloadItem : INotifyPropertyChanged
     private string _sizeText = string.Empty;
     private string _etaText = string.Empty;
     private string _outputPath = string.Empty;
+    private string _partFilePath = string.Empty;
 
     public string Id { get; init; } = Guid.NewGuid().ToString("N");
     public string Url { get; init; } = string.Empty;
+    public DownloadKind Kind { get; init; } = DownloadKind.Video;
     public bool IsInstagram { get; init; }
     public InstagramBrowser InstagramBrowser { get; init; } = InstagramBrowser.Chrome;
     public string? InstagramCookieFile { get; init; }
@@ -27,6 +29,18 @@ public sealed class DownloadItem : INotifyPropertyChanged
     public string Quality { get; init; } = "1080p";
     public string Format { get; init; } = "mp4";
     public string SaveFolder { get; init; } = string.Empty;
+    public string? DesiredFileName { get; init; }
+    public int ConnectionCount { get; init; } = 8;
+    public string PartFilePath
+    {
+        get => _partFilePath;
+        set
+        {
+            _partFilePath = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanRetry));
+        }
+    }
     public string OutputPath
     {
         get => _outputPath;
@@ -82,6 +96,7 @@ public sealed class DownloadItem : INotifyPropertyChanged
             _status = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(CanPause));
+            OnPropertyChanged(nameof(CanResume));
             OnPropertyChanged(nameof(CanCancel));
             OnPropertyChanged(nameof(CanRetry));
             OnPropertyChanged(nameof(IsCompleted));
@@ -123,9 +138,12 @@ public sealed class DownloadItem : INotifyPropertyChanged
         set { _etaText = value; OnPropertyChanged(); }
     }
 
-    public bool CanPause => Status == DownloadStatus.Downloading;
+    public bool CanPause => Kind == DownloadKind.DirectFile && Status == DownloadStatus.Downloading;
+    public bool CanResume => Kind == DownloadKind.DirectFile && Status == DownloadStatus.Paused;
     public bool CanCancel => Status is DownloadStatus.Queued or DownloadStatus.Fetching or DownloadStatus.Downloading or DownloadStatus.Paused;
-    public bool CanRetry => Status == DownloadStatus.Failed;
+    public bool CanRetry => Status == DownloadStatus.Failed
+        || (Status == DownloadStatus.Cancelled && Kind == DownloadKind.DirectFile
+            && !string.IsNullOrWhiteSpace(PartFilePath) && File.Exists(PartFilePath));
     public bool IsCompleted => Status == DownloadStatus.Completed;
     public bool CanPlay => IsCompleted && !string.IsNullOrWhiteSpace(OutputPath) && File.Exists(OutputPath);
     public bool CanOpenFolder => IsCompleted && (!string.IsNullOrWhiteSpace(OutputPath) || !string.IsNullOrWhiteSpace(SaveFolder));

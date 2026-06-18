@@ -7,17 +7,21 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>DownloadMaster</AssemblyName>
     <RootNamespace>DownloadMaster</RootNamespace>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Authors>mothannakh</Authors>
     <Company>mothannakh</Company>
     <Product>DownloadMaster</Product>
     <Description>Native Windows video download manager powered by yt-dlp and FFmpeg.</Description>
-    <Copyright>Copyright © 2026 mothannakh · https://satisfy.live/</Copyright>
+    <Copyright>Copyright Â© 2026 mothannakh Â· https://satisfy.live/</Copyright>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="FFMpegCore" Version="5.1.0" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.13.1" />
+  </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\app.ico" />
     <Resource Include="Assets\app-icon.png" />

@@ -1,6 +1,6 @@
-**Last updated:** {{DATE}}
+**Last updated:** June 19, 2026
 
-## DownloadMaster {{VERSION}}
+## DownloadMaster v1.2.0
 
 ### What's new
 

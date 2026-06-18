@@ -153,10 +153,11 @@ if not exist "%NOTES_TEMPLATE%" (
 )
 
 powershell -NoProfile -Command ^
-    "$template = Get-Content -LiteralPath '%NOTES_TEMPLATE%' -Raw;" ^
+    "$template = Get-Content -LiteralPath '%NOTES_TEMPLATE%' -Raw -Encoding UTF8;" ^
     "$date = Get-Date -Format 'MMMM d, yyyy';" ^
     "$notes = $template.Replace('{{DATE}}', $date).Replace('{{VERSION}}', 'v%VERSION%');" ^
-    "[System.IO.File]::WriteAllText('%NOTES%', $notes, (New-Object System.Text.UTF8Encoding $false))"
+    "$utf8 = New-Object System.Text.UTF8Encoding $false;" ^
+    "[System.IO.File]::WriteAllText('%NOTES%', $notes, $utf8)"
 
 echo.
 echo [5/5] Creating GitHub release %TAG%...
