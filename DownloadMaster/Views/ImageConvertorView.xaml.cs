@@ -59,6 +59,10 @@ public partial class ImageConvertorView : UserControl
         ImageResultsTitle.Text = loc.Get("ImageConvertResult");
         ImageClearResultsButton.Content = loc.Get("ClearList");
         ImageConvertButton.Content = loc.Get("ImageConvertButton");
+        ImageResultStatusCol.Header = loc.Get("ResultColStatus");
+        ImageResultFileCol.Header = loc.Get("ResultColFile");
+        ImageResultSizeCol.Header = loc.Get("ResultColSizeChange");
+        ImageResultDetailsCol.Header = loc.Get("ResultColDetails");
         ImageStatusText.Text = loc.Get("ImageConvertReady");
         ImageResultsSummaryText.Text = loc.Get("ImageConvertNoResult");
         UpdateModeUi();

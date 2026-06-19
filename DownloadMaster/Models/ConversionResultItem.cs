@@ -10,7 +10,7 @@ public sealed class ConversionResultItem
     public required string SizeChange { get; init; }
     public required string Detail { get; init; }
     public bool IsSuccess { get; init; }
-    public bool IsFailed => !IsSuccess && Status is not "Pending" and not "Converting";
+    public bool IsFailed => !IsSuccess && Status is not "Pending" and not "Converting" and not "Exporting";
 
     public static ConversionResultItem Pending(string sourcePath) => new()
     {
@@ -83,6 +83,62 @@ public sealed class ConversionResultItem
             FileName = Path.GetFileName(result.SourcePath),
             Status = "Failed",
             SizeChange = FormatBytes(result.OriginalSizeBytes),
+            Detail = result.ErrorMessage ?? "Unknown error",
+            IsSuccess = false
+        };
+    }
+
+    public static ConversionResultItem FromAudioResult(AudioConversionResult result)
+    {
+        if (result.Success)
+        {
+            return new ConversionResultItem
+            {
+                SourcePath = result.SourcePath,
+                FileName = Path.GetFileName(result.SourcePath),
+                Status = "OK",
+                SizeChange = $"{FormatBytes(result.OriginalSizeBytes)} → {FormatBytes(result.OutputSizeBytes)} ({result.SizeReductionPercent:F1}%)",
+                Detail = Path.GetFileName(result.OutputPath),
+                IsSuccess = true
+            };
+        }
+
+        return new ConversionResultItem
+        {
+            SourcePath = result.SourcePath,
+            FileName = Path.GetFileName(result.SourcePath),
+            Status = "Failed",
+            SizeChange = FormatBytes(result.OriginalSizeBytes),
+            Detail = result.ErrorMessage ?? "Unknown error",
+            IsSuccess = false
+        };
+    }
+
+    public static ConversionResultItem FromSpeechResult(SpeechConversionResult result, string previewLabel)
+    {
+        if (result.Success)
+        {
+            var duration = result.Duration > TimeSpan.Zero
+                ? $"  •  {result.Duration.Minutes}:{result.Duration.Seconds:D2}"
+                : string.Empty;
+
+            return new ConversionResultItem
+            {
+                SourcePath = previewLabel,
+                FileName = previewLabel,
+                Status = "OK",
+                SizeChange = FormatBytes(result.OutputSizeBytes),
+                Detail = $"{Path.GetFileName(result.OutputPath)}{duration}",
+                IsSuccess = true
+            };
+        }
+
+        return new ConversionResultItem
+        {
+            SourcePath = previewLabel,
+            FileName = previewLabel,
+            Status = "Failed",
+            SizeChange = "—",
             Detail = result.ErrorMessage ?? "Unknown error",
             IsSuccess = false
         };

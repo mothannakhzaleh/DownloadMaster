@@ -1,0 +1,203 @@
+<UserControl x:Class="DownloadMaster.Views.SpeechConvertorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" MaxHeight="520" />
+            <RowDefinition Height="*" MinHeight="140" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Background="{DynamicResource SurfaceElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1" CornerRadius="12" Padding="14" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock x:Name="SpeechFormatLabel" Text="Export format" FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                    <WrapPanel>
+                        <RadioButton x:Name="SpeechWavRadio" Content="wav" GroupName="SpeechFormat"
+                                     Style="{StaticResource FormatChoiceRadio}" />
+                        <RadioButton x:Name="SpeechMp3Radio" Content="mp3" GroupName="SpeechFormat" IsChecked="True"
+                                     Style="{StaticResource FormatChoiceRadio}" />
+                        <RadioButton x:Name="SpeechM4aRadio" Content="m4a" GroupName="SpeechFormat"
+                                     Style="{StaticResource FormatChoiceRadio}" />
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="240" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" MinWidth="240" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="260" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Background="{DynamicResource SurfaceElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="12" Padding="14" VerticalAlignment="Stretch">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" MinHeight="160" />
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="SpeechTextTitle" Text="Text to speak" FontWeight="SemiBold" FontSize="14"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBlock x:Name="SpeechTextHint" Grid.Row="1"
+                                   Text="Type or paste the text you want spoken aloud."
+                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,4,0,12" />
+                        <TextBox x:Name="SpeechTextBox" Grid.Row="2" AcceptsReturn="True" TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto" MinHeight="160" TextChanged="SpeechTextBox_TextChanged" />
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="2" Background="{DynamicResource SurfaceElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="12" Padding="14" VerticalAlignment="Stretch">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock x:Name="SpeechVoiceTitle" Text="Voice settings" FontWeight="SemiBold" FontSize="14"
+                                       Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12" />
+                            <TextBlock x:Name="SpeechVoiceLabel" Text="Voice" FontSize="12"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                            <ComboBox x:Name="SpeechVoiceCombo" Margin="0,0,0,12" SelectedValuePath="Name">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding DisplayName}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding DetailText}"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="16,0,0,0" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock x:Name="SpeechRateLabel" Text="Speed" FontSize="12"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Slider x:Name="SpeechRateSlider" Grid.Column="0" Minimum="-5" Maximum="5" Value="0"
+                                        TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Width="28" Margin="12,0,0,0" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Text="{Binding ElementName=SpeechRateSlider, Path=Value, StringFormat={}{0:0}}" />
+                            </Grid>
+                            <TextBlock x:Name="SpeechVolumeLabel" Text="Volume" FontSize="12"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Slider x:Name="SpeechVolumeSlider" Grid.Column="0" Minimum="0" Maximum="100" Value="100"
+                                        TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Width="36" Margin="12,0,0,0" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Text="{Binding ElementName=SpeechVolumeSlider, Path=Value, StringFormat={}{0:0}%}" />
+                            </Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="SpeechPreviewButton" Content="Preview" Style="{StaticResource PrimaryButton}"
+                                        MinWidth="100" Margin="0,0,10,0" Click="PreviewSpeech_Click" />
+                                <Button x:Name="SpeechStopButton" Content="Stop" Style="{StaticResource SecondaryButton}"
+                                        MinWidth="80" IsEnabled="False" Click="StopSpeech_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+
+                <Border Grid.Column="4" Background="{DynamicResource SurfaceElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="12" Padding="14" VerticalAlignment="Stretch">
+                    <StackPanel>
+                        <TextBlock x:Name="SpeechOutputTitle" Text="Output" FontWeight="SemiBold" FontSize="14"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12" />
+                        <TextBlock x:Name="SpeechFileNameLabel" Text="File name" FontSize="12"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                        <TextBox x:Name="SpeechOutputNameBox" Text="speech" Margin="0,0,0,12" />
+                        <TextBlock x:Name="SpeechSaveToLabel" Text="Save to folder" FontSize="12"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="SpeechOutputFolderBox" Grid.Column="0" IsReadOnly="True" />
+                            <Button x:Name="SpeechBrowseOutputButton" Grid.Column="1" Content="Browse"
+                                    Style="{StaticResource SecondaryButton}" Margin="10,0,0,0"
+                                    Click="BrowseSpeechOutput_Click" />
+                        </Grid>
+                        <TextBlock x:Name="SpeechCharacterCount" Text="0 characters"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8" />
+                        <TextBlock x:Name="SpeechVoiceStatus" Text=""
+                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap"
+                                   Margin="0,0,0,8" />
+                        <TextBlock x:Name="SpeechInstallHint"
+                                   Text="Uses Windows built-in voices. Install more in Settings → Time &amp; language → Speech."
+                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1" CornerRadius="12" Padding="14" Margin="0,12,0,12">
+            <Grid MinHeight="100">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" MinHeight="60" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="SpeechResultsTitle" Text="Speech result" FontWeight="SemiBold" FontSize="14"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock x:Name="SpeechResultsSummaryText" Grid.Column="1" VerticalAlignment="Center" FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" Text="No export yet" />
+                </Grid>
+                <ProgressBar x:Name="SpeechResultsProgressBar" Grid.Row="1" Margin="0,10,0,10" Minimum="0" Maximum="100"
+                             Value="0" Visibility="Collapsed" Height="6" />
+                <ListView x:Name="SpeechResultsList" Grid.Row="2" MinHeight="60" BorderThickness="0" Background="Transparent">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn x:Name="SpeechResultStatusCol" Header="Status" Width="80" DisplayMemberBinding="{Binding Status}" />
+                            <GridViewColumn x:Name="SpeechResultLabelCol" Header="Label" Width="180" DisplayMemberBinding="{Binding FileName}" />
+                            <GridViewColumn x:Name="SpeechResultSizeCol" Header="Output size" Width="200" DisplayMemberBinding="{Binding SizeChange}" />
+                            <GridViewColumn x:Name="SpeechResultDetailsCol" Header="Details" Width="360" DisplayMemberBinding="{Binding Detail}" />
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock x:Name="SpeechStatusText" Text="Ready" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13" />
+                <ProgressBar x:Name="SpeechProgressBar" Margin="0,8,16,0" Minimum="0" Maximum="100" Value="0"
+                             Visibility="Collapsed" Height="6" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button x:Name="SpeechClearResultsButton" Content="Clear result" Style="{StaticResource SecondaryButton}"
+                        Margin="0,0,10,0" Click="ClearSpeechResults_Click" />
+                <Button x:Name="SpeechExportButton" Content="Export audio" Style="{StaticResource PrimaryButton}"
+                        MinWidth="140" Click="ExportSpeech_Click" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -191,10 +191,10 @@
                 <ListView x:Name="ImageResultsList" Grid.Row="2" MinHeight="60" BorderThickness="0" Background="Transparent">
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="Status" Width="80" DisplayMemberBinding="{Binding Status}" />
-                            <GridViewColumn Header="File" Width="180" DisplayMemberBinding="{Binding FileName}" />
-                            <GridViewColumn Header="Size change" Width="200" DisplayMemberBinding="{Binding SizeChange}" />
-                            <GridViewColumn Header="Details" Width="360" DisplayMemberBinding="{Binding Detail}" />
+                            <GridViewColumn x:Name="ImageResultStatusCol" Header="Status" Width="80" DisplayMemberBinding="{Binding Status}" />
+                            <GridViewColumn x:Name="ImageResultFileCol" Header="File" Width="180" DisplayMemberBinding="{Binding FileName}" />
+                            <GridViewColumn x:Name="ImageResultSizeCol" Header="Size change" Width="200" DisplayMemberBinding="{Binding SizeChange}" />
+                            <GridViewColumn x:Name="ImageResultDetailsCol" Header="Details" Width="360" DisplayMemberBinding="{Binding Detail}" />
                         </GridView>
                     </ListView.View>
                 </ListView>

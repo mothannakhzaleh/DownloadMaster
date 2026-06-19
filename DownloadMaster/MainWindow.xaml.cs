@@ -89,6 +89,7 @@ public partial class MainWindow : Window
         {
             StatusText.Text = _loc.Get("ToolsReady");
             VideoConvertorPanel.RefreshFfmpegStatus();
+            AudioConvertorPanel.RefreshFfmpegStatus();
             return;
         }
 
@@ -97,6 +98,7 @@ public partial class MainWindow : Window
         if (!ToolLocator.HasFfmpeg) missing.Add(_loc.Get("ToolsMissingFfmpeg"));
         StatusText.Text = string.Join(" · ", missing);
         VideoConvertorPanel.RefreshFfmpegStatus();
+        AudioConvertorPanel.RefreshFfmpegStatus();
     }
 
     private void ApplyLocalization()
@@ -115,10 +117,15 @@ public partial class MainWindow : Window
         VideoTab.Header = _loc.Get("TabVideo");
         InstagramTab.Header = _loc.Get("TabInstagram");
         FileDownloadTab.Header = _loc.Get("TabFileDownload");
+        ConvertTab.Header = _loc.Get("TabConvert");
         VideoConvertSubTab.Header = _loc.Get("TabVideoConvert");
         ImageConvertSubTab.Header = _loc.Get("TabImageConvert");
+        AudioConvertSubTab.Header = _loc.Get("TabAudioConvert");
+        SpeechConvertSubTab.Header = _loc.Get("TabSpeechConvert");
         VideoConvertorPanel.ApplyLocalization(_loc);
         ImageConvertorPanel.ApplyLocalization(_loc);
+        AudioConvertorPanel.ApplyLocalization(_loc);
+        SpeechConvertorPanel.ApplyLocalization(_loc);
         FileDownloadHintText.Text = _loc.Get("FileDownloadHint");
         FileDownloadButton.Content = _loc.Get("Download");
         FileDownloadNameLabel.Text = _loc.Get("FileDownloadName");

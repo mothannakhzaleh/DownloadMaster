@@ -58,6 +58,10 @@ public partial class VideoConvertorView : UserControl
         VideoResultsTitle.Text = loc.Get("VideoConvertResult");
         VideoClearResultsButton.Content = loc.Get("ClearList");
         VideoConvertButton.Content = loc.Get("VideoConvertButton");
+        VideoResultStatusCol.Header = loc.Get("ResultColStatus");
+        VideoResultFileCol.Header = loc.Get("ResultColFile");
+        VideoResultSizeCol.Header = loc.Get("ResultColSizeChange");
+        VideoResultDetailsCol.Header = loc.Get("ResultColDetails");
         UpdateVideoOperationUi();
         UpdateFfmpegStatus();
     }

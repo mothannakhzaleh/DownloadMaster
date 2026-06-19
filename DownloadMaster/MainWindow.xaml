@@ -226,12 +226,18 @@
             </TabItem>
 
             <TabItem x:Name="ConvertTab" Header="Convert">
-                <TabControl x:Name="ConvertSubTabs" Background="Transparent" BorderThickness="0" Margin="0,8,0,0">
+                <TabControl x:Name="ConvertSubTabs" Style="{StaticResource NestedTabControl}" Margin="0,8,0,0">
                     <TabItem x:Name="VideoConvertSubTab" Header="Video Convert">
                         <views:VideoConvertorView x:Name="VideoConvertorPanel" />
                     </TabItem>
                     <TabItem x:Name="ImageConvertSubTab" Header="Image Convert">
                         <views:ImageConvertorView x:Name="ImageConvertorPanel" />
+                    </TabItem>
+                    <TabItem x:Name="AudioConvertSubTab" Header="Audio Convert">
+                        <views:AudioConvertorView x:Name="AudioConvertorPanel" />
+                    </TabItem>
+                    <TabItem x:Name="SpeechConvertSubTab" Header="Speech">
+                        <views:SpeechConvertorView x:Name="SpeechConvertorPanel" />
                     </TabItem>
                 </TabControl>
             </TabItem>

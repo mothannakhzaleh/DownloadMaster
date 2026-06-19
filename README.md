@@ -14,6 +14,14 @@
 |-------------------------|---------------|---------------|
 | ![Files tab](docs/img3.png) | ![Video Convert](docs/img4.png) | ![Image Convert](docs/img5.png) |
 
+| Audio Convert | Speech (text-to-speech) | About |
+|---------------|-------------------------|-------|
+| ![Audio Convert](docs/img6.png) | ![Speech](docs/img7.png) | ![About](docs/img8.png) |
+
+| Settings | Language |
+|----------|----------|
+| ![Settings](docs/img9.png) | ![Language](docs/img10.png) |
+
 ---
 
 ## Author
@@ -64,6 +72,8 @@ This project is intended for **public open-source release**. Bundled tool binari
 - **Video Convert** — convert format, optimize in place, **GIF**, or **frame textures** (FFmpeg)
 - **Image Convert** — single image or **folder batch**; PNG, JPEG, WebP, BMP, TIFF, GIF, TGA, DDS
 - **PNG palette optimization** — 16–256 colors, optional dither, transparency preserved
+- **Audio Convert** — convert or optimize audio; extract audio from video; MP3, WAV, M4A, FLAC, OGG, AMR, iPhone ringtone
+- **Speech** — text-to-speech with Windows voices; preview, speed/volume; export WAV, MP3, or M4A
 - Preview, drag-and-drop, per-file results; download queue hidden on this tab
 
 ### App
@@ -224,6 +234,11 @@ VideoDownloader/
 │   ├── img3.png              # README screenshot (Files tab)
 │   ├── img4.png              # README screenshot (Video Convert)
 │   ├── img5.png              # README screenshot (Image Convert)
+│   ├── img6.png              # README screenshot (Audio Convert)
+│   ├── img7.png              # README screenshot (Speech)
+│   ├── img8.png              # README screenshot (About)
+│   ├── img9.png              # README screenshot (Settings)
+│   ├── img10.png             # README screenshot (Language)
 │   ├── STRUCTURE.md
 │   └── release-notes-template.md
 ├── DownloadMaster/           # WPF application
