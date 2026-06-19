@@ -12,7 +12,7 @@
     <Company>mothannakh</Company>
     <Product>DownloadMaster</Product>
     <Description>Native Windows video download manager powered by yt-dlp and FFmpeg.</Description>
-    <Copyright>Copyright Â© 2026 mothannakh Â· https://satisfy.live/</Copyright>
+    <Copyright>Copyright (c) 2026 mothannakh - https://satisfy.live/</Copyright>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
