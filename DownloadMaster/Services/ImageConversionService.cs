@@ -229,6 +229,7 @@ public sealed class ImageConversionService
             Directory.CreateDirectory(Path.GetDirectoryName(writePath)!);
 
             using var image = new MagickImage(sourcePath);
+            ExpandIndexedToTrueColor(image);
             ApplyResize(image, settings);
             ApplyFormatSettings(image, settings, sourcePath);
 
@@ -364,6 +365,8 @@ public sealed class ImageConversionService
 
     private static void ApplyPngPaletteOptimization(MagickImage image, ImageConversionSettings settings)
     {
+        ExpandIndexedToTrueColor(image);
+
         var colorCount = (uint)Math.Clamp(settings.PngColorCount, 16, 256);
 
         image.Quantize(new QuantizeSettings
@@ -407,6 +410,41 @@ public sealed class ImageConversionService
         }
 
         return Path.Combine(Path.GetDirectoryName(sourcePath)!, fileName);
+    }
+
+    private static void ExpandIndexedToTrueColor(MagickImage image)
+    {
+        if (image.ClassType != ClassType.Pseudo &&
+            image.ColorType is not ColorType.Palette and not ColorType.PaletteAlpha)
+        {
+            return;
+        }
+
+        var colormapSize = (int)image.ColormapSize;
+        if (colormapSize <= 0)
+        {
+            image.ColorType = ColorType.TrueColor;
+            image.Depth = 8;
+            return;
+        }
+
+        var fallback = image.GetColormapColor(0) ?? MagickColors.Black;
+
+        for (var i = 0; i < colormapSize; i++)
+        {
+            if (image.GetColormapColor(i) is null)
+                image.SetColormapColor(i, fallback);
+        }
+
+        // Game BMPs often store pixel indices up to 255 while declaring a smaller palette.
+        for (var i = colormapSize; i < 256; i++)
+            image.SetColormapColor(i, fallback);
+
+        image.ColormapSize = 256;
+
+        var preserveAlpha = image.ColorType == ColorType.PaletteAlpha || image.HasAlpha;
+        image.ColorType = preserveAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
+        image.Depth = 8;
     }
 
     private static bool IsSameFormat(string sourceExtension, ImageFormat format) =>
