@@ -126,7 +126,10 @@ public sealed class ImageConversionService
 
     public static MagickImage LoadImage(string path)
     {
-        var image = new MagickImage(path);
+        var normalizedBytes = BmpPaletteNormalizer.TryNormalizeForRead(path);
+        var image = normalizedBytes is null
+            ? new MagickImage(path)
+            : new MagickImage(normalizedBytes);
         ExpandIndexedToTrueColor(image);
         return image;
     }
