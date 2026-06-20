@@ -95,7 +95,7 @@ public sealed partial class InstagramDirectDownloadService
         if (downloaded == 0)
             throw new InvalidOperationException("No media could be downloaded from that highlight.");
 
-        item.OutputPath = FindLatestOutput(item.SaveFolder, baseName);
+        item.OutputPath = FindLatestOutput(item.SaveFolder, baseName) ?? string.Empty;
     }
 
     private static async Task<int> DownloadHighlightStoryAsync(
@@ -229,7 +229,7 @@ public sealed partial class InstagramDirectDownloadService
         if (downloaded == 0)
             throw new InvalidOperationException("No photo or video could be downloaded from that post.");
 
-        item.OutputPath = lastSavedPath ?? FindLatestOutput(item.SaveFolder, baseName);
+        item.OutputPath = lastSavedPath ?? FindLatestOutput(item.SaveFolder, baseName) ?? string.Empty;
     }
 
     private static async Task<JsonElement> LoadPostMediaAsync(
