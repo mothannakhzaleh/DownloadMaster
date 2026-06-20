@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using DownloadMaster.Models;
 using DownloadMaster.Services;
+using ImageMagick;
 using Microsoft.Win32;
 
 namespace DownloadMaster.Views;
@@ -195,14 +196,20 @@ public partial class ImageConvertorView : UserControl
         {
             var bitmap = await Task.Run(() =>
             {
-                var image = new BitmapImage();
-                image.BeginInit();
-                image.CacheOption = BitmapCacheOption.OnLoad;
-                image.UriSource = new Uri(path, UriKind.Absolute);
-                image.DecodePixelWidth = 240;
-                image.EndInit();
-                image.Freeze();
-                return image;
+                using var image = ImageConversionService.LoadImage(path);
+                using var stream = new MemoryStream();
+                image.Format = MagickFormat.Png;
+                image.Write(stream);
+                stream.Position = 0;
+
+                var preview = new BitmapImage();
+                preview.BeginInit();
+                preview.CacheOption = BitmapCacheOption.OnLoad;
+                preview.StreamSource = stream;
+                preview.DecodePixelWidth = 240;
+                preview.EndInit();
+                preview.Freeze();
+                return preview;
             });
 
             ImagePreviewImage.Source = bitmap;

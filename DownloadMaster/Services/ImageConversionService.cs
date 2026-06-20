@@ -109,7 +109,7 @@ public sealed class ImageConversionService
     {
         try
         {
-            using var image = new MagickImage(path);
+            using var image = LoadImage(path);
             var fileInfo = new FileInfo(path);
 
             return new ImageInputFileItem
@@ -122,6 +122,13 @@ public sealed class ImageConversionService
         {
             return CreateInputFileItemFast(path);
         }
+    }
+
+    public static MagickImage LoadImage(string path)
+    {
+        var image = new MagickImage(path);
+        ExpandIndexedToTrueColor(image);
+        return image;
     }
 
     public async Task<IReadOnlyList<ImageConversionResult>> ConvertAsync(
@@ -228,8 +235,7 @@ public sealed class ImageConversionService
 
             Directory.CreateDirectory(Path.GetDirectoryName(writePath)!);
 
-            using var image = new MagickImage(sourcePath);
-            ExpandIndexedToTrueColor(image);
+            using var image = LoadImage(sourcePath);
             ApplyResize(image, settings);
             ApplyFormatSettings(image, settings, sourcePath);
 
@@ -414,33 +420,32 @@ public sealed class ImageConversionService
 
     private static void ExpandIndexedToTrueColor(MagickImage image)
     {
-        if (image.ClassType != ClassType.Pseudo &&
-            image.ColorType is not ColorType.Palette and not ColorType.PaletteAlpha)
-        {
-            return;
-        }
+        var isIndexed = image.ClassType == ClassType.Pseudo ||
+                        image.ColorType is ColorType.Palette or ColorType.PaletteAlpha;
 
-        var colormapSize = (int)image.ColormapSize;
-        if (colormapSize <= 0)
+        if (!isIndexed && image.ColormapSize <= 0)
+            return;
+
+        var originalSize = (int)Math.Clamp((int)image.ColormapSize, 0, 256);
+        if (originalSize <= 0 && !isIndexed)
         {
             image.ColorType = ColorType.TrueColor;
             image.Depth = 8;
             return;
         }
 
-        var fallback = image.GetColormapColor(0) ?? MagickColors.Black;
+        var fallback = originalSize > 0
+            ? image.GetColormapColor(0) ?? MagickColors.Black
+            : MagickColors.Black;
 
-        for (var i = 0; i < colormapSize; i++)
-        {
-            if (image.GetColormapColor(i) is null)
-                image.SetColormapColor(i, fallback);
-        }
-
-        // Game BMPs often store pixel indices up to 255 while declaring a smaller palette.
-        for (var i = colormapSize; i < 256; i++)
-            image.SetColormapColor(i, fallback);
+        var preserved = new IMagickColor<ushort>?[256];
+        for (var i = 0; i < originalSize; i++)
+            preserved[i] = image.GetColormapColor(i);
 
         image.ColormapSize = 256;
+
+        for (var i = 0; i < 256; i++)
+            image.SetColormapColor(i, preserved[i] ?? fallback);
 
         var preserveAlpha = image.ColorType == ColorType.PaletteAlpha || image.HasAlpha;
         image.ColorType = preserveAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
