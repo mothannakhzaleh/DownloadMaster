@@ -378,6 +378,13 @@ public sealed class ImageConversionService
 
         var colorCount = (uint)Math.Clamp(settings.PngColorCount, 16, 256);
 
+        if (ShouldSkipPaletteQuantize(image, colorCount))
+        {
+            image.Format = MagickFormat.Png;
+            ApplyMaxPngCompression(image);
+            return;
+        }
+
         image.Quantize(new QuantizeSettings
         {
             Colors = colorCount,
@@ -387,6 +394,22 @@ public sealed class ImageConversionService
         });
 
         image.Format = MagickFormat.Png8;
+        ApplyMaxPngCompression(image);
+    }
+
+    private static bool ShouldSkipPaletteQuantize(MagickImage image, uint targetColors)
+    {
+        if (!image.HasAlpha)
+            return false;
+
+        if (image.TotalColors <= targetColors)
+            return true;
+
+        return image.Width * image.Height <= 256;
+    }
+
+    private static void ApplyMaxPngCompression(MagickImage image)
+    {
         image.Settings.SetDefine(MagickFormat.Png, "compression-level", "9");
         image.Settings.SetDefine(MagickFormat.Png, "compression-filter", "5");
         image.Settings.SetDefine(MagickFormat.Png, "compression-strategy", "1");

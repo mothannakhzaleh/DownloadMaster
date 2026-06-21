@@ -4,10 +4,9 @@
 
 ### What's new
 
-#### Fix — Satisfy / PKO 8-bit BMP load
+#### Fix — alpha UI textures (TGA/PNG optimize)
 
-- **invalid colormap index** when converting game BMPs that declare 255 palette slots but pixels use index 255
-- BMP palette is normalized in memory before ImageMagick reads the file (works with or without PNG optimize)
+- PNG palette optimization no longer turns transparent whites into black on small alpha sprites
 - Same fix as MediaConvertor for Image Convert
 
 ### Install
