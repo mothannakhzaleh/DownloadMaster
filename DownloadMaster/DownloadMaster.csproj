@@ -20,7 +20,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="FFMpegCore" Version="5.1.0" />
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.13.1" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.15.0" />
     <PackageReference Include="System.Speech" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
