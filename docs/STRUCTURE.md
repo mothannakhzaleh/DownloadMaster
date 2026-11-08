@@ -12,7 +12,7 @@ VideoDownloader/
 ├── README.md · LICENSE · THIRD_PARTY_LICENSES.md
 ├── .github/workflows/
 │   ├── ci.yml                       # Build + tests on Windows / Linux / macOS, extension check
-│   └── release.yml                  # Tag v* → standalone packages + extension zip + GitHub Release
+│   └── release.yml                  # Tag v* → GitHub Release; push to master → "nightly" pre-release
 ├── src/
 │   ├── DownloadMaster/              # The app (see below)
 │   └── browser-extension/           # Chrome / Edge / Brave / Opera extension (Manifest V3)

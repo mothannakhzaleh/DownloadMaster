@@ -3,11 +3,20 @@
 #
 # Cut a release:   git tag v2.0.0 && git push origin v2.0.0
 # Or manually:     Actions -> Release -> Run workflow -> version 2.0.0
+#
+# Nightly: every push to master rebuilds the same packages and replaces the single
+# "nightly" pre-release (fixed file names, never marked as the latest release).
 name: Release
 
 on:
   push:
     tags: ['v*']
+    branches: [master]
+    # Doc-only changes don't need a new nightly (paths filters are ignored for tag pushes).
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
   workflow_dispatch:
     inputs:
       version:
@@ -20,7 +29,8 @@ permissions:
 
 concurrency:
   group: release-${{ github.ref }}-${{ inputs.version }}
-  cancel-in-progress: false
+  # A newer push to master supersedes a nightly that is still building.
+  cancel-in-progress: ${{ github.ref == 'refs/heads/master' }}
 
 env:
   DOTNET_NOLOGO: 'true'
@@ -38,11 +48,33 @@ jobs:
       version: ${{ steps.v.outputs.version }}
       tag: ${{ steps.v.outputs.tag }}
       prerelease: ${{ steps.v.outputs.prerelease }}
+      nightly: ${{ steps.v.outputs.nightly }}
+      extension_version: ${{ steps.v.outputs.extension_version }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
       - id: v
         env:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
+          if [ "$GITHUB_REF" = "refs/heads/master" ] && [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            # Nightly: <csproj version>-nightly.<run number>, published under the fixed tag "nightly".
+            base="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$PROJECT" | head -n 1)"
+            base="${base:-0.0.0}"
+            version="$base-nightly.$GITHUB_RUN_NUMBER"
+            {
+              echo "version=$version"
+              echo "tag=nightly"
+              echo "prerelease=true"
+              echo "nightly=true"
+              # Chrome needs 1-4 numeric parts; the run number makes every nightly newer.
+              echo "extension_version=${base%%[-+]*}.$GITHUB_RUN_NUMBER"
+            } >> "$GITHUB_OUTPUT"
+            echo "Nightly $version"
+            exit 0
+          fi
+
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             raw="$INPUT_VERSION"
           else
@@ -59,6 +91,8 @@ jobs:
             echo "version=$version"
             echo "tag=v$version"
             echo "prerelease=$prerelease"
+            echo "nightly=false"
+            echo "extension_version=$(printf '%s' "$version" | sed -E 's/^([0-9]+(\.[0-9]+){0,3}).*/\1/')"
           } >> "$GITHUB_OUTPUT"
           echo "Releasing v$version (prerelease: $prerelease)"
 
@@ -91,15 +125,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ matrix.rid }}-${{ hashFiles('**/*.csproj', '**/Directory.Build.props', '**/Directory.Packages.props') }}
@@ -329,7 +363,7 @@ jobs:
           ls -la dist
 
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-${{ matrix.rid }}
           path: dist/*
@@ -345,12 +379,14 @@ jobs:
     env:
       VERSION: ${{ needs.version.outputs.version }}
       TAG: ${{ needs.version.outputs.tag }}
+      NIGHTLY: ${{ needs.version.outputs.nightly }}
+      EXT_VERSION: ${{ needs.version.outputs.extension_version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download packages
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: release-*
           path: dist
@@ -362,9 +398,8 @@ jobs:
           mkdir -p "$stage"
           cp -R src/browser-extension/. "$stage/"
           rm -f "$stage/README.md"
-          # Chrome only accepts numeric versions (e.g. 2.0.0 from v2.0.0-beta.1).
-          ext_version="$(printf '%s' "$VERSION" | sed -E 's/^([0-9]+(\.[0-9]+){0,3}).*/\1/')"
-          python3 - "$stage/manifest.json" "$ext_version" <<'PY'
+          # Chrome only accepts numeric versions (resolved by the version job).
+          python3 - "$stage/manifest.json" "$EXT_VERSION" <<'PY'
           import json, sys
           path, version = sys.argv[1], sys.argv[2]
           manifest = json.load(open(path))
@@ -384,7 +419,29 @@ jobs:
         run: |
           mkdir -p out
           notes=out/release-notes.md
-          if [ -f docs/release-notes-template.md ]; then
+          if [ "$NIGHTLY" = "true" ]; then
+            short_sha="${GITHUB_SHA::7}"
+            date_str="$(date -u '+%B %-d, %Y %H:%M UTC')"
+            subject="$(git log -1 --format=%s "$GITHUB_SHA")"
+            {
+              echo "## DownloadMaster nightly — $VERSION"
+              echo
+              echo "Automatic build of \`master\` at [\`$short_sha\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) ($date_str): $subject"
+              echo
+              echo "> Development build, rebuilt on every push to master and replaced each time."
+              echo "> For a stable version use the [latest release]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/latest)."
+              echo
+              echo "| System | File |"
+              echo "|--------|------|"
+              echo "| Windows x64 | \`DownloadMaster-nightly-win-x64.zip\` |"
+              echo "| macOS Apple Silicon | \`DownloadMaster-nightly-osx-arm64.zip\` |"
+              echo "| macOS Intel | \`DownloadMaster-nightly-osx-x64.zip\` |"
+              echo "| Linux x64 | \`DownloadMaster-nightly-linux-x64.tar.gz\` |"
+              echo "| Browser extension | \`DownloadMaster-nightly-browser-extension.zip\` (also bundled with the app) |"
+              echo
+              echo "Standalone: each package includes yt-dlp, FFmpeg and the browser extension. Checksums: \`SHA256SUMS.txt\`."
+            } > "$notes"
+          elif [ -f docs/release-notes-template.md ]; then
             date_str="$(date -u '+%B %-d, %Y')"
             sed -e "s|{{VERSION}}|$TAG|g" -e "s|{{DATE}}|$date_str|g" \
               docs/release-notes-template.md > "$notes"
@@ -393,14 +450,25 @@ jobs:
           fi
           cat "$notes"
 
+      # Nightly: drop the previous nightly release and its tag so the new one points at this commit
+      # and only the latest files remain.
+      - name: Remove previous nightly
+        if: needs.version.outputs.nightly == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete nightly --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/nightly" 2>/dev/null || true
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.version.outputs.tag }}
-          name: DownloadMaster ${{ needs.version.outputs.tag }}
+          name: ${{ needs.version.outputs.nightly == 'true' && format('DownloadMaster nightly ({0})', needs.version.outputs.version) || format('DownloadMaster {0}', needs.version.outputs.tag) }}
           target_commitish: ${{ github.sha }}
           body_path: out/release-notes.md
-          generate_release_notes: true
+          generate_release_notes: ${{ needs.version.outputs.nightly != 'true' }}
           prerelease: ${{ needs.version.outputs.prerelease == 'true' }}
+          make_latest: ${{ needs.version.outputs.nightly == 'true' && 'false' || 'true' }}
           fail_on_unmatched_files: true
           files: dist/*
