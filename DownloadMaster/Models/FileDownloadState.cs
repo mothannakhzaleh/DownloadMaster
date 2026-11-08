@@ -11,6 +11,20 @@ public sealed class FileDownloadState
     public bool SupportsRanges { get; set; }
     public int ConnectionCount { get; set; } = 8;
     public List<FileDownloadSegmentState> Segments { get; set; } = [];
+
+    /// <summary>Deep copy, so a snapshot can be serialized while workers keep updating the live state.</summary>
+    public FileDownloadState Clone() => new()
+    {
+        Id = Id,
+        Url = Url,
+        DownloadUrl = DownloadUrl,
+        OutputPath = OutputPath,
+        PartPath = PartPath,
+        TotalBytes = TotalBytes,
+        SupportsRanges = SupportsRanges,
+        ConnectionCount = ConnectionCount,
+        Segments = Segments.Select(s => new FileDownloadSegmentState { Start = s.Start, End = s.End, Downloaded = s.Downloaded }).ToList()
+    };
 }
 
 public sealed class FileDownloadSegmentState

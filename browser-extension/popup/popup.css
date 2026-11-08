@@ -1,0 +1,52 @@
+:root {
+  --bg: #0F1117; --surface: #181B24; --elevated: #222633; --border: #2E3447;
+  --text: #F3F4F8; --muted: #B8C0D4; --accent: #6366F1; --accent-hover: #818CF8;
+  --ok: #22C55E; --bad: #EF4444;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #F4F6FB; --surface: #FFFFFF; --elevated: #EEF2FF; --border: #D8DEEB;
+    --text: #111827; --muted: #475569; --accent: #4F46E5; --accent-hover: #6366F1;
+    --ok: #16A34A; --bad: #DC2626;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  width: 360px; margin: 0; padding: 14px;
+  background: var(--bg); color: var(--text);
+  font: 13px/1.4 system-ui, -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
+}
+header { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+h1 { font-size: 16px; margin: 0; }
+p { margin: 2px 0 0; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 10px 12px; margin-bottom: 10px;
+}
+.row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 5px 0; }
+input[type=number] {
+  width: 64px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--elevated); color: var(--text);
+}
+input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); }
+button {
+  border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px;
+  background: var(--elevated); color: var(--text); font: inherit; cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button.primary:hover { background: var(--accent-hover); }
+button:disabled { opacity: .5; cursor: default; }
+ul { list-style: none; margin: 6px 0 0; padding: 0; max-height: 220px; overflow-y: auto; }
+li {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 6px 0; border-top: 1px solid var(--border);
+}
+li .label { font-weight: 600; }
+li .url { color: var(--muted); font-size: 11px; word-break: break-all; }
+#status.ok { color: var(--ok); }
+#status.bad { color: var(--bad); }
+#message.ok { color: var(--ok); }
+#message.bad { color: var(--bad); }

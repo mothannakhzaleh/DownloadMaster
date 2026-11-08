@@ -85,6 +85,7 @@ public static class VideoFormatCatalog
         return null;
     }
 
-    public static string BuildInputFilter() =>
-        string.Join(";", SupportedInputExtensions.Select(e => $"*{e}")) + "|All files|*.*";
+    /// <summary>Supported input extensions without the dot (for file picker filters).</summary>
+    public static IReadOnlyList<string> InputExtensions { get; } =
+        SupportedInputExtensions.Select(e => e.TrimStart('.')).Order(StringComparer.OrdinalIgnoreCase).ToList();
 }

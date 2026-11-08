@@ -1,0 +1,185 @@
+<UserControl x:Class="DownloadMaster.Views.AudioConvertorView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             DragDrop.AllowDrop="True">
+    <UserControl.Styles>
+        <Style Selector="Border.card.dragover">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="TextBlock.field">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+        <Style Selector="RadioButton TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- Format bar (mp3, wav, iPhone ringtone, m4a, flac, ogg, mp2, amr) -->
+        <Border Grid.Row="0" Classes="card" Padding="16,12,16,8" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock x:Name="AudioFormatLabel" Classes="field" Text="Target format" />
+                <WrapPanel x:Name="AudioFormatPanel" Orientation="Horizontal" />
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,12,*,12,260" MaxHeight="480">
+
+            <!-- Source -->
+            <Border Grid.Column="0" Classes="card" MinWidth="240">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <TextBlock x:Name="AudioSourceTitle" Classes="h2" Text="Audio source" Margin="0,0,0,4" />
+                        <TextBlock x:Name="AudioSourceHint" Classes="secondary" FontSize="12" Margin="0,0,0,12"
+                                   Text="Single audio or video file" />
+
+                        <TextBlock x:Name="AudioFileLabel" Classes="field" Text="Input file" />
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+                            <TextBox x:Name="AudioInputPathBox" IsReadOnly="True" />
+                            <Button x:Name="AudioBrowseInputButton" Grid.Column="1" Classes="secondary"
+                                    Content="Browse" Margin="10,0,0,0" />
+                        </Grid>
+
+                        <TextBlock x:Name="AudioOperationLabel" Classes="field" Text="Operation" />
+                        <StackPanel Spacing="2" Margin="0,0,0,12">
+                            <RadioButton x:Name="AudioConvertRadio" GroupName="AudioOperation" IsChecked="True">
+                                <TextBlock x:Name="AudioConvertRadioText" Text="Convert — change to another format" />
+                            </RadioButton>
+                            <RadioButton x:Name="AudioOptimizeRadio" GroupName="AudioOperation">
+                                <TextBlock x:Name="AudioOptimizeRadioText" Text="Optimize — re-encode and overwrite same format" />
+                            </RadioButton>
+                        </StackPanel>
+
+                        <TextBlock x:Name="AudioOperationHint" Classes="secondary" FontSize="12" TextWrapping="Wrap"
+                                   Text="Convert extracts audio (from video if needed) and re-encodes into the selected format." />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Output -->
+            <Border Grid.Column="2" Classes="card" MinWidth="240">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <TextBlock x:Name="AudioOutputTitle" Classes="h2" Text="Output" Margin="0,0,0,12" />
+
+                        <TextBlock x:Name="AudioQualityLabel" Classes="field" Text="Quality" />
+                        <ComboBox x:Name="AudioQualityCombo" HorizontalAlignment="Stretch" Margin="0,0,0,12">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="{Binding Label}" />
+                                        <TextBlock Grid.Column="1" Classes="secondary" Margin="16,0,0,0"
+                                                   Text="{Binding BitrateText}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <TextBlock x:Name="AudioSaveToLabel" Classes="field" Text="Save to" />
+                        <StackPanel Spacing="2" Margin="0,0,0,10">
+                            <RadioButton x:Name="AudioSameFolderRadio" GroupName="AudioOutput" IsChecked="True">
+                                <TextBlock x:Name="AudioSameFolderRadioText" Text="Same folder (optimize in place or replace extension)" />
+                            </RadioButton>
+                            <RadioButton x:Name="AudioCustomFolderRadio" GroupName="AudioOutput">
+                                <TextBlock x:Name="AudioCustomFolderRadioText" Text="Custom output folder" />
+                            </RadioButton>
+                        </StackPanel>
+
+                        <Grid x:Name="AudioOutputFolderPanel" ColumnDefinitions="*,Auto" Margin="0,0,0,12" IsEnabled="False">
+                            <TextBox x:Name="AudioOutputFolderBox" IsReadOnly="True" />
+                            <Button x:Name="AudioBrowseOutputButton" Grid.Column="1" Classes="secondary"
+                                    Content="Browse" Margin="10,0,0,0" />
+                        </Grid>
+
+                        <TextBlock x:Name="AudioQualityHint" Classes="secondary" FontSize="12" TextWrapping="Wrap"
+                                   Text="Quality applies to MP3, M4A, OGG, MP2, AMR, and iPhone ringtone." />
+                        <TextBlock x:Name="AudioFormatNote" Classes="secondary" FontSize="12" TextWrapping="Wrap"
+                                   Margin="0,6,0,0" IsVisible="False" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Info / drop zone -->
+            <Border x:Name="AudioInfoDropZone" Grid.Column="4" Classes="card">
+                <StackPanel>
+                    <TextBlock x:Name="AudioInfoTitle" Classes="h2" Text="Audio info" Margin="0,0,0,10" />
+                    <Border Classes="elevated" MinHeight="130" Margin="0,0,0,10"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="AudioInfoTitleText" Text="Drop an audio or video file" FontWeight="SemiBold"
+                                       FontSize="12" TextWrapping="Wrap" />
+                            <SelectableTextBlock x:Name="AudioInfoDetails" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"
+                                                 Foreground="{DynamicResource TextSecondaryBrush}"
+                                                 Text="Codec, channels, duration, and size appear here." />
+                            <TextBlock x:Name="AudioFfmpegStatus" Classes="secondary" FontSize="11"
+                                       TextWrapping="Wrap" Margin="0,8,0,0" />
+                        </StackPanel>
+                    </Border>
+                    <TextBlock x:Name="AudioSupportedLabel" Classes="field" Text="Supported inputs" />
+                    <TextBlock x:Name="AudioSupportedText" Classes="secondary" FontSize="11" TextWrapping="Wrap"
+                               Text="MP3, WAV, M4A, FLAC, OGG, AAC, WMA, AMR, and video files (audio track extracted)." />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Result -->
+        <Border Grid.Row="2" Classes="card" Margin="0,12">
+            <Grid RowDefinitions="Auto,Auto,Auto,*" MinHeight="100">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock x:Name="AudioResultsTitle" Classes="h2" Text="Audio result" />
+                    <TextBlock x:Name="AudioResultsSummaryText" Grid.Column="1" Classes="secondary" FontSize="12"
+                               VerticalAlignment="Center" TextWrapping="Wrap" Text="No conversion yet" />
+                </Grid>
+                <ProgressBar x:Name="AudioResultsProgressBar" Grid.Row="1" Margin="0,10,0,4"
+                             Minimum="0" Maximum="100" Value="0" IsVisible="False" />
+
+                <Grid Grid.Row="2" ColumnDefinitions="90,2*,2*,3*" Margin="4,10,4,6">
+                    <TextBlock x:Name="AudioResultStatusCol" Classes="secondary" FontSize="12" FontWeight="SemiBold" Text="Status" />
+                    <TextBlock x:Name="AudioResultFileCol" Grid.Column="1" Classes="secondary" FontSize="12" FontWeight="SemiBold" Text="File" />
+                    <TextBlock x:Name="AudioResultSizeCol" Grid.Column="2" Classes="secondary" FontSize="12" FontWeight="SemiBold" Text="Size change" />
+                    <TextBlock x:Name="AudioResultDetailsCol" Grid.Column="3" Classes="secondary" FontSize="12" FontWeight="SemiBold" Text="Details" />
+                </Grid>
+
+                <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl x:Name="AudioResultsList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="4,8">
+                                    <Grid ColumnDefinitions="90,2*,2*,3*">
+                                        <TextBlock Text="{Binding Status}" FontWeight="SemiBold" VerticalAlignment="Center"
+                                                   Classes.success="{Binding IsSuccess}"
+                                                   Classes.error="{Binding IsFailed}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding FileName}" TextTrimming="CharacterEllipsis"
+                                                   ToolTip.Tip="{Binding SourcePath}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="2" Text="{Binding SizeChange}" TextWrapping="Wrap"
+                                                   Margin="0,0,8,0" VerticalAlignment="Center" />
+                                        <SelectableTextBlock Grid.Column="3" Text="{Binding Detail}" TextWrapping="Wrap"
+                                                             VerticalAlignment="Center" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!-- Status bar -->
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto">
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock x:Name="AudioStatusText" Text="Ready" FontSize="13" TextTrimming="CharacterEllipsis" />
+                <ProgressBar x:Name="AudioProgressBar" Margin="0,8,16,0" Minimum="0" Maximum="100" Value="0"
+                             IsVisible="False" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                <Button x:Name="AudioCancelButton" Classes="secondary" Content="Cancel" IsVisible="False" />
+                <Button x:Name="AudioClearResultsButton" Classes="secondary" Content="Clear result" />
+                <Button x:Name="AudioConvertButton" Classes="primary" Content="Convert audio" MinWidth="140" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,84 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DownloadMaster.SettingsWindow"
+        Title="Settings"
+        Icon="/Assets/app.ico"
+        Height="640" Width="660"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <TextBlock x:Name="HeaderText" Grid.Row="0" Text="Settings" FontSize="22" FontWeight="Bold" Margin="24,24,24,12" />
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="24,0">
+            <StackPanel>
+                <TextBlock x:Name="SavePathLabel" Text="Default save folder" Classes="secondary" Margin="0,0,0,6" />
+                <Grid Margin="0,0,0,14" ColumnDefinitions="*,Auto">
+                    <TextBox x:Name="SavePathBox" />
+                    <Button Grid.Column="1" Content="..." Margin="8,0,0,0" Classes="secondary" Padding="12,10" Click="BrowseSavePath_Click" />
+                </Grid>
+
+                <TextBlock x:Name="MaxConcurrentLabel" Text="Max concurrent downloads" Classes="secondary" Margin="0,0,0,6" />
+                <ComboBox x:Name="ConcurrentCombo" Margin="0,0,0,14" SelectedIndex="2">
+                    <ComboBoxItem Content="1" />
+                    <ComboBoxItem Content="2" />
+                    <ComboBoxItem Content="3" />
+                    <ComboBoxItem Content="4" />
+                    <ComboBoxItem Content="5" />
+                </ComboBox>
+
+                <TextBlock x:Name="FileDownloadConnectionsLabel" Text="File download connections" Classes="secondary" Margin="0,0,0,6" />
+                <ComboBox x:Name="FileDownloadConnectionsCombo" Margin="0,0,0,14" SelectedIndex="1">
+                    <ComboBoxItem Content="4" />
+                    <ComboBoxItem Content="8" />
+                    <ComboBoxItem Content="12" />
+                    <ComboBoxItem Content="16" />
+                </ComboBox>
+
+                <CheckBox x:Name="MinimizeToTrayCheck" Content="Minimize to tray when closing the window" Margin="0,0,0,8" />
+                <CheckBox x:Name="StartWithOsCheck" Content="Start DownloadMaster when I sign in (in the tray)" Margin="0,0,0,8" />
+                <CheckBox x:Name="ClipboardMonitorCheck" Content="Watch the clipboard for download links" Margin="0,0,0,8" />
+                <CheckBox x:Name="SortCategoriesCheck" Margin="0,0,0,14">
+                    <TextBlock x:Name="SortCategoriesText" TextWrapping="Wrap"
+                               Text="Sort downloads into category folders" />
+                </CheckBox>
+
+                <TextBlock x:Name="SchedulerHeader" Text="Queue scheduler" FontWeight="SemiBold" Margin="0,4,0,6" />
+                <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" Margin="0,0,0,6">
+                    <CheckBox x:Name="SchedulerStartCheck" Content="Start downloads at" VerticalAlignment="Center" Margin="0,0,12,6" />
+                    <TextBox x:Name="SchedulerStartBox" Grid.Column="1" Width="90" Watermark="02:00" Margin="0,0,0,6"
+                             IsEnabled="{Binding #SchedulerStartCheck.IsChecked}" />
+                    <CheckBox x:Name="SchedulerStopCheck" Grid.Row="1" Content="Pause downloads at" VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <TextBox x:Name="SchedulerStopBox" Grid.Row="1" Grid.Column="1" Width="90" Watermark="07:00"
+                             IsEnabled="{Binding #SchedulerStopCheck.IsChecked}" />
+                </Grid>
+                <TextBlock x:Name="SchedulerHintText" Classes="secondary" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,14" />
+
+                <Button x:Name="BrowserExtensionButton" Content="Browser extension…" Classes="secondary"
+                        HorizontalAlignment="Left" Margin="0,0,0,14" Click="BrowserExtensionButton_Click" />
+
+                <TextBlock x:Name="ThemeLabel" Text="Theme" Classes="secondary" Margin="0,0,0,6" />
+                <ComboBox x:Name="ThemeCombo" Margin="0,0,0,14" />
+
+                <TextBlock x:Name="LanguageLabel" Text="Language" Classes="secondary" Margin="0,0,0,6" />
+                <ComboBox x:Name="LanguageCombo" Margin="0,0,0,8">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DisplayName}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,1,0,0" Padding="24,16">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button x:Name="ResetButton" Content="Reset defaults" Classes="secondary" Click="ResetButton_Click" />
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button x:Name="CancelButton" Content="Cancel" Classes="secondary" Margin="0,0,10,0" IsCancel="True" Click="CancelButton_Click" />
+                    <Button x:Name="SaveButton" Content="Save" Classes="primary" IsDefault="True" Click="SaveButton_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

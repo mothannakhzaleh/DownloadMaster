@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Headless image-conversion regressions for Windows, macOS, Linux and CI.
+    Run from the repo root:  dotnet run (project tests/ImageConversion.Regression) -c Release
+    Real textures can be appended after the "double dash" separator; they are copied, never modified.
+    Links the UI-free conversion sources instead of referencing the Avalonia WinExe app.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>ImageConversion.Regression</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Keep in sync with DownloadMaster/DownloadMaster.csproj. -->
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.17.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\DownloadMaster\Models\ImageSettings.cs" Link="Linked\ImageSettings.cs" />
+    <Compile Include="..\..\DownloadMaster\Models\ImageExtensionFilterSettings.cs" Link="Linked\ImageExtensionFilterSettings.cs" />
+    <Compile Include="..\..\DownloadMaster\Services\Convert\ImageConversionService.cs" Link="Linked\ImageConversionService.cs" />
+    <Compile Include="..\..\DownloadMaster\Services\Convert\BmpPaletteNormalizer.cs" Link="Linked\BmpPaletteNormalizer.cs" />
+    <Compile Include="..\..\DownloadMaster\Services\Convert\PngReadNormalizer.cs" Link="Linked\PngReadNormalizer.cs" />
+    <Compile Include="..\..\DownloadMaster\Services\FormatHelpers.cs" Link="Linked\FormatHelpers.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>DownloadMaster</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="../icons/icon32.png" alt="" width="28" height="28">
+    <div>
+      <h1>DownloadMaster</h1>
+      <p id="status" class="muted">Checking…</p>
+    </div>
+  </header>
+
+  <section class="card">
+    <label class="row">
+      <span>Catch browser downloads</span>
+      <input id="interceptEnabled" type="checkbox">
+    </label>
+    <label class="row">
+      <span>Show button on videos</span>
+      <input id="videoButton" type="checkbox">
+    </label>
+    <label class="row">
+      <span>Also catch any file larger than</span>
+      <span><input id="minSizeMB" type="number" min="0" max="10240" step="1"> MB</span>
+    </label>
+    <p id="appOff" class="muted small" hidden>Interception is turned off in the app's tray menu.</p>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <strong>This tab</strong>
+      <button id="sendPage" type="button" class="primary">Download this page's video</button>
+    </div>
+    <ul id="streams"></ul>
+    <p id="noStreams" class="muted small">No streams detected yet. Start playing the video.</p>
+  </section>
+
+  <p id="message" class="small" hidden></p>
+  <p id="offline" class="muted small" hidden>
+    DownloadMaster isn't running. Start the app (it can stay in the tray) and reopen this popup.
+    Until then, downloads go to the browser as usual.
+  </p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

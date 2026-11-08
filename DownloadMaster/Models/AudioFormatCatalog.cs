@@ -42,12 +42,13 @@ public static class AudioFormatCatalog
     [
         new() { Format = AudioFormat.Mp3, ButtonLabel = "mp3", DisplayName = "MP3", Extension = ".mp3", AudioCodec = "libmp3lame" },
         new() { Format = AudioFormat.Wav, ButtonLabel = "wav", DisplayName = "WAV", Extension = ".wav", AudioCodec = "pcm_s16le", UsesQuality = false },
-        new() { Format = AudioFormat.IPhoneRingtone, ButtonLabel = "iPhone ringtone", DisplayName = "iPhone ringtone (M4R)", Extension = ".m4r", AudioCodec = "aac", ExtraOutputArgs = "-movflags +faststart" },
+        // ffmpeg has no muxer mapped to .m4r, so force the iPod MP4 muxer; iOS ringtones are limited to 40 s.
+        new() { Format = AudioFormat.IPhoneRingtone, ButtonLabel = "iPhone ringtone", DisplayName = "iPhone ringtone (M4R)", Extension = ".m4r", AudioCodec = "aac", ExtraOutputArgs = "-t 40 -f ipod -movflags +faststart" },
         new() { Format = AudioFormat.M4a, ButtonLabel = "m4a", DisplayName = "M4A (AAC)", Extension = ".m4a", AudioCodec = "aac", ExtraOutputArgs = "-movflags +faststart" },
         new() { Format = AudioFormat.Flac, ButtonLabel = "flac", DisplayName = "FLAC", Extension = ".flac", AudioCodec = "flac", UsesQuality = false, ExtraOutputArgs = "-compression_level 8" },
         new() { Format = AudioFormat.Ogg, ButtonLabel = "ogg", DisplayName = "OGG (Vorbis)", Extension = ".ogg", AudioCodec = "libvorbis" },
         new() { Format = AudioFormat.Mp2, ButtonLabel = "mp2", DisplayName = "MP2", Extension = ".mp2", AudioCodec = "mp2" },
-        new() { Format = AudioFormat.Amr, ButtonLabel = "amr", DisplayName = "AMR", Extension = ".amr", AudioCodec = "libopencore_amrnb" }
+        new() { Format = AudioFormat.Amr, ButtonLabel = "amr", DisplayName = "AMR", Extension = ".amr", AudioCodec = "libopencore_amrnb", ExtraOutputArgs = "-ar 8000 -ac 1" }
     ];
 
     private static readonly HashSet<string> SupportedAudioExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -77,17 +78,15 @@ public static class AudioFormatCatalog
         return null;
     }
 
-    public static string BuildInputFilter()
-    {
-        var extensions = SupportedAudioExtensions
-            .Concat([
-                ".mp4", ".mkv", ".webm", ".avi", ".mov", ".wmv", ".flv", ".mpg", ".mpeg",
-                ".m4v", ".ts", ".mts", ".m2ts", ".3gp", ".ogv", ".asf", ".divx", ".vob"
-            ])
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(e => e)
-            .Select(e => $"*{e}");
+    /// <summary>Audio extensions without the dot (for file picker filters).</summary>
+    public static IReadOnlyList<string> AudioInputExtensions { get; } =
+        SupportedAudioExtensions.Select(e => e.TrimStart('.')).Order(StringComparer.OrdinalIgnoreCase).ToList();
 
-        return $"Audio and video|{string.Join(";", extensions)}|All files|*.*";
-    }
+    /// <summary>Audio plus video extensions (audio track is extracted from video) without the dot.</summary>
+    public static IReadOnlyList<string> InputExtensions { get; } =
+        AudioInputExtensions
+            .Concat(VideoFormatCatalog.InputExtensions)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 }

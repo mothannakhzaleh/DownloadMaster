@@ -1,0 +1,43 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DownloadMaster.AboutWindow"
+        Title="About"
+        Icon="/Assets/app.ico"
+        Height="540" Width="520"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <Grid Margin="24" RowDefinitions="Auto,*,Auto">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+            <Image Source="/Assets/app-icon.png" Width="56" Height="56" Margin="0,0,16,0"
+                   RenderOptions.BitmapInterpolationMode="HighQuality" />
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock x:Name="TitleText" Text="DownloadMaster" FontSize="24" FontWeight="Bold" />
+                <TextBlock x:Name="VersionText" Text="Version 1.0.0" FontSize="13" Classes="secondary" Margin="0,4,0,0" />
+            </StackPanel>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <StackPanel.Styles>
+                    <Style Selector="HyperlinkButton">
+                        <Setter Property="Padding" Value="0,2" />
+                        <Setter Property="FontSize" Value="14" />
+                    </Style>
+                </StackPanel.Styles>
+                <TextBlock x:Name="DescriptionText" TextWrapping="Wrap" FontSize="14" LineHeight="22" Margin="0,0,0,12" />
+                <TextBlock x:Name="FeaturesText" TextWrapping="Wrap" FontSize="13" LineHeight="20" Classes="secondary" Margin="0,0,0,14" />
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock x:Name="AuthorPrefixText" Text="Copyright © 2026 " FontSize="14" Classes="secondary" VerticalAlignment="Center" />
+                    <HyperlinkButton Content="mothannakh" Tag="https://github.com/mothannakhzaleh/DownloadMaster" Click="Link_Click" />
+                </StackPanel>
+                <HyperlinkButton Content="GitHub: mothannakhzaleh/DownloadMaster" Tag="https://github.com/mothannakhzaleh/DownloadMaster" Click="Link_Click" />
+                <HyperlinkButton Content="https://satisfy.live/" Tag="https://satisfy.live/" Click="Link_Click" />
+                <HyperlinkButton Content="YouTube: @ToPSourceDevelopment" Tag="https://www.youtube.com/@ToPSourceDevelopment" Margin="0,0,0,14" Click="Link_Click" />
+                <TextBlock x:Name="LicenseText" TextWrapping="Wrap" FontSize="13" Classes="secondary" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <Button Grid.Row="2" x:Name="CloseButton" Content="Close" Classes="primary" IsCancel="True" IsDefault="True"
+                HorizontalAlignment="Right" Margin="0,16,0,0" Padding="20,10" Click="CloseButton_Click" />
+    </Grid>
+</Window>

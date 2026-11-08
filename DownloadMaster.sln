@@ -5,15 +5,36 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DownloadMaster", "DownloadMaster\DownloadMaster.csproj", "{A7B3C4D5-E6F7-4890-AB12-3456789ABCDE}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{5E1C7A3B-2D4F-4B8E-9A61-0C3D2E4F5A6B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageConversion.Regression", "tests\ImageConversion.Regression\ImageConversion.Regression.csproj", "{B8C4D5E6-F7A8-4901-BC23-456789ABCDEF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DownloadEngine.Regression", "tests\DownloadEngine.Regression\DownloadEngine.Regression.csproj", "{C9D5E6F7-A8B9-4012-8D34-56789ABCDEF0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Release|x64 = Release|x64
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A7B3C4D5-E6F7-4890-AB12-3456789ABCDE}.Release|x64.ActiveCfg = Release|x64
-		{A7B3C4D5-E6F7-4890-AB12-3456789ABCDE}.Release|x64.Build.0 = Release|x64
+		{A7B3C4D5-E6F7-4890-AB12-3456789ABCDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7B3C4D5-E6F7-4890-AB12-3456789ABCDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7B3C4D5-E6F7-4890-AB12-3456789ABCDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7B3C4D5-E6F7-4890-AB12-3456789ABCDE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8C4D5E6-F7A8-4901-BC23-456789ABCDEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8C4D5E6-F7A8-4901-BC23-456789ABCDEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8C4D5E6-F7A8-4901-BC23-456789ABCDEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8C4D5E6-F7A8-4901-BC23-456789ABCDEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9D5E6F7-A8B9-4012-8D34-56789ABCDEF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9D5E6F7-A8B9-4012-8D34-56789ABCDEF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9D5E6F7-A8B9-4012-8D34-56789ABCDEF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9D5E6F7-A8B9-4012-8D34-56789ABCDEF0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B8C4D5E6-F7A8-4901-BC23-456789ABCDEF} = {5E1C7A3B-2D4F-4B8E-9A61-0C3D2E4F5A6B}
+		{C9D5E6F7-A8B9-4012-8D34-56789ABCDEF0} = {5E1C7A3B-2D4F-4B8E-9A61-0C3D2E4F5A6B}
 	EndGlobalSection
 EndGlobal

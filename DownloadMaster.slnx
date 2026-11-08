@@ -1,8 +1,7 @@
 <Solution>
-  <Configurations>
-    <Platform Name="x64" TargetFramework="net8.0-windows" />
-  </Configurations>
-  <Project Path="DownloadMaster/DownloadMaster.csproj">
-    <BuildType Project="Release" Solution="Release|x64" />
-  </Project>
+  <Project Path="DownloadMaster/DownloadMaster.csproj" />
+  <Folder Name="/tests/">
+    <Project Path="tests/DownloadEngine.Regression/DownloadEngine.Regression.csproj" />
+    <Project Path="tests/ImageConversion.Regression/ImageConversion.Regression.csproj" />
+  </Folder>
 </Solution>

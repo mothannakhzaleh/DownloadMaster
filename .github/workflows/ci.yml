@@ -1,0 +1,100 @@
+# Build check on every push / pull request, on GitHub-hosted runners
+# (Windows, Linux, macOS arm64). Release packages are produced by release.yml.
+name: CI
+
+on:
+  push:
+    # Only branches: tag pushes (v*) are handled by release.yml.
+    branches: ['**']
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+  PROJECT: DownloadMaster/DownloadMaster.csproj
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+          - name: linux
+            os: ubuntu-latest
+          - name: macos-arm64
+            os: macos-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.csproj', '**/Directory.Build.props', '**/Directory.Packages.props') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Restore
+        run: dotnet restore "$PROJECT"
+
+      - name: Build (Release)
+        run: dotnet build "$PROJECT" -c Release --no-restore
+
+      - name: Image conversion regression tests
+        if: hashFiles('tests/ImageConversion.Regression/*.csproj') != ''
+        run: dotnet run --project tests/ImageConversion.Regression -c Release
+
+      - name: Download engine regression tests
+        if: hashFiles('tests/DownloadEngine.Regression/*.csproj') != ''
+        run: dotnet run --project tests/DownloadEngine.Regression -c Release
+
+      - name: Check browser extension (syntax + manifest)
+        if: runner.os == 'Linux'
+        run: |
+          for f in browser-extension/background.js browser-extension/content.js browser-extension/popup/popup.js; do
+            node --check "$f"
+          done
+          python3 -c "import json; m = json.load(open('browser-extension/manifest.json')); assert m['manifest_version'] == 3"
+
+      - name: Publish framework-dependent build
+        run: dotnet publish "$PROJECT" -c Release --no-build -o "artifacts/ci/DownloadMaster-${{ matrix.name }}"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DownloadMaster-ci-${{ matrix.name }}
+          path: artifacts/ci/DownloadMaster-${{ matrix.name }}
+          retention-days: 7
+          if-no-files-found: error

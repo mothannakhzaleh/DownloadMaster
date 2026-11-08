@@ -1,0 +1,307 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="using:DownloadMaster.Views"
+             x:Class="DownloadMaster.Views.ImageConvertorView"
+             DragDrop.AllowDrop="True">
+    <UserControl.Styles>
+        <Style Selector="Border.card.dropTarget">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="TextBlock.hint">
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style Selector="TextBlock.field">
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+        <Style Selector="TextBlock.h2">
+            <Setter Property="Margin" Value="0,0,0,10" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="3*" MinHeight="300" />
+            <RowDefinition Height="2*" MinHeight="170" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Settings + preview -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="250" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" MinWidth="270" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="290" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Source -->
+            <Border Grid.Column="0" Classes="card" Padding="14,14,6,14">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="0,0,8,0">
+                        <TextBlock x:Name="SourceTitle" Classes="h2" Text="Image source" />
+
+                        <TextBlock x:Name="ModeLabel" Classes="field" Text="Conversion mode" />
+                        <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,0,0,12">
+                            <RadioButton x:Name="SingleFileRadio" Content="Single image" GroupName="ImgMode" IsChecked="True" />
+                            <RadioButton x:Name="FolderRadio" Content="Folder" GroupName="ImgMode" />
+                        </StackPanel>
+
+                        <TextBlock x:Name="InputLabel" Classes="field" Text="Image file" />
+                        <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,12">
+                            <TextBox x:Name="InputPathBox" IsReadOnly="True" />
+                            <Button x:Name="BrowseInputButton" Grid.Column="1" Classes="secondary" Content="Browse"
+                                    Margin="8,0,0,0" />
+                            <Button x:Name="UnloadButton" Grid.Column="2" Classes="secondary" Content="Unload folder"
+                                    Margin="8,0,0,0" IsVisible="False" />
+                        </Grid>
+
+                        <CheckBox x:Name="IncludeSubfoldersCheck" Content="Include subfolders" IsVisible="False"
+                                  Margin="0,0,0,8" />
+
+                        <StackPanel x:Name="ExtensionFilterPanel" IsVisible="False" Margin="0,0,0,12">
+                            <CheckBox x:Name="EnableExtensionFilterCheck" Content="Filter by file type in folder"
+                                      Margin="0,0,0,6" />
+                            <StackPanel x:Name="ExtensionFilterOptionsPanel" IsEnabled="False" Margin="8,0,0,0">
+                                <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,0,0,6">
+                                    <RadioButton x:Name="IncludeOnlyExtensionsRadio" Content="Convert only"
+                                                 GroupName="ImgExtFilter" IsChecked="True" />
+                                    <RadioButton x:Name="ExcludeExtensionsRadio" Content="Skip / exclude"
+                                                 GroupName="ImgExtFilter" />
+                                </StackPanel>
+                                <TextBlock x:Name="ExtensionFilterHint" Classes="field" Text="Select one or more extensions:" />
+                                <WrapPanel x:Name="ExtensionCheckboxesPanel">
+                                    <CheckBox x:Name="SelectAllExtensionsCheck" Content="All" FontWeight="SemiBold"
+                                              MinWidth="60" Margin="0,0,10,0" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Output & optimization -->
+            <Border Grid.Column="2" Classes="card" Padding="14,14,6,14">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="0,0,8,0">
+                        <TextBlock x:Name="OutputTitle" Classes="h2" Text="Output &amp; optimization" />
+
+                        <TextBlock x:Name="FormatLabel" Classes="field" Text="Target format" />
+                        <ComboBox x:Name="FormatCombo" HorizontalAlignment="Stretch" SelectedIndex="0" Margin="0,0,0,12">
+                            <ComboBoxItem Content="PNG" Tag="Png" />
+                            <ComboBoxItem Content="JPEG" Tag="Jpeg" />
+                            <ComboBoxItem Content="WebP" Tag="WebP" />
+                            <ComboBoxItem Content="BMP" Tag="Bmp" />
+                            <ComboBoxItem Content="TIFF" Tag="Tiff" />
+                            <ComboBoxItem Content="GIF" Tag="Gif" />
+                            <ComboBoxItem Content="TGA" Tag="Tga" />
+                            <ComboBoxItem Content="DDS" Tag="Dds" />
+                        </ComboBox>
+
+                        <TextBlock x:Name="SaveToLabel" Classes="field" Text="Save to" />
+                        <StackPanel Margin="0,0,0,8">
+                            <RadioButton x:Name="SameFolderRadio" GroupName="ImgOutput" IsChecked="True"
+                                         Content="Same folder (optimize in place or replace extension)" />
+                            <RadioButton x:Name="CustomFolderRadio" GroupName="ImgOutput" Content="Custom output folder" />
+                        </StackPanel>
+                        <Grid x:Name="OutputFolderPanel" ColumnDefinitions="*,Auto" IsEnabled="False" Margin="0,0,0,10">
+                            <TextBox x:Name="OutputFolderBox" IsReadOnly="True" />
+                            <Button x:Name="BrowseOutputButton" Grid.Column="1" Classes="secondary" Content="Browse"
+                                    Margin="8,0,0,0" />
+                        </Grid>
+
+                        <CheckBox x:Name="DeleteSourceCheck" Content="Delete source when extension changes" />
+                        <TextBlock x:Name="DeleteSourceHint" Classes="hint" Margin="28,0,0,14"
+                                   Text="After a successful conversion, removes originals like .bmp/.tga/.dds when the target becomes .png." />
+
+                        <TextBlock x:Name="ResolutionTitle" Classes="h2" Text="Resolution" />
+                        <StackPanel Margin="0,0,0,10" Spacing="6">
+                            <RadioButton x:Name="OriginalResolutionRadio" GroupName="ImgResolution" IsChecked="True"
+                                         Content="Keep original resolution" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <RadioButton x:Name="PresetResolutionRadio" GroupName="ImgResolution" Content="Preset:"
+                                             VerticalAlignment="Center" />
+                                <ComboBox x:Name="PresetResolutionCombo" Width="180" IsEnabled="False" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <RadioButton x:Name="CustomResolutionRadio" GroupName="ImgResolution" Content="Custom:"
+                                             VerticalAlignment="Center" />
+                                <TextBox x:Name="CustomWidthBox" Width="72" Text="512" IsEnabled="False"
+                                         Padding="8,6" HorizontalContentAlignment="Center" />
+                                <TextBlock Text="×" Classes="secondary" VerticalAlignment="Center" />
+                                <TextBox x:Name="CustomHeightBox" Width="72" Text="512" IsEnabled="False"
+                                         Padding="8,6" HorizontalContentAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel x:Name="ResamplingPanel" IsVisible="False" Margin="0,0,0,12">
+                            <TextBlock x:Name="ResamplingLabel" Classes="field" Text="Resampling (like Photoshop)" />
+                            <ComboBox x:Name="ResamplingCombo" HorizontalAlignment="Stretch" SelectedIndex="1">
+                                <ComboBoxItem Content="Smooth (Lanczos) — photos" Tag="Smooth" />
+                                <ComboBoxItem Content="Nearest Neighbor — pixel art / 32×32" Tag="NearestNeighbor" />
+                                <ComboBoxItem Content="Bilinear — soft downscale" Tag="Bilinear" />
+                                <ComboBoxItem Content="Bicubic — smooth detail" Tag="Bicubic" />
+                            </ComboBox>
+                            <TextBlock x:Name="ResamplingHint" Classes="hint" Margin="0,6,0,0" />
+                        </StackPanel>
+
+                        <CheckBox x:Name="ColorDepthCheck" Content="Custom color depth" />
+                        <StackPanel x:Name="ColorDepthPanel" IsEnabled="False" Margin="28,0,0,12">
+                            <RadioButton x:Name="RemoveAlphaRadio" GroupName="ImgColorDepth" IsChecked="True"
+                                         Content="Remove alpha (24-bit RGB)" />
+                            <RadioButton x:Name="Indexed8Radio" GroupName="ImgColorDepth" Content="8-bit indexed palette" />
+                            <RadioButton x:Name="Keep32BitRadio" GroupName="ImgColorDepth" Content="Keep 32-bit RGBA" />
+                            <TextBlock x:Name="ColorDepthHint" Classes="hint" Margin="0,6,0,0" />
+                        </StackPanel>
+
+                        <CheckBox x:Name="SatisfyTransparencyCheck" Content="Satisfy / PKO transparent pink" />
+                        <TextBlock x:Name="SatisfyHint" Classes="hint" Margin="28,0,0,6"
+                                   Text="Turns chroma-key magenta into PNG alpha (not artistic pink)." />
+                        <StackPanel x:Name="SatisfyMatchModePanel" IsEnabled="False" Margin="28,0,0,6">
+                            <TextBlock x:Name="PinkKeyMatchLabel" Classes="field" Text="Pink key match" />
+                            <ComboBox x:Name="PinkKeyMatchCombo" HorizontalAlignment="Stretch" SelectedIndex="0"
+                                      Margin="0,0,0,4">
+                                <ComboBoxItem Content="Near key (recommended) — R/B≈255, G≈0" Tag="NearKey" />
+                                <ComboBoxItem Content="Exact only — #FF00FF / #FF01FF / #FF02FF" Tag="Exact" />
+                                <ComboBoxItem Content="Legacy soft fuzz (can break real pink artwork)" Tag="LegacySoftFuzz" />
+                            </ComboBox>
+                            <TextBlock x:Name="PinkKeyHint" Classes="hint" />
+                        </StackPanel>
+                        <CheckBox x:Name="SatisfyProcessPngCheck" Content="Also process source PNG files"
+                                  IsEnabled="False" Margin="28,0,0,0" />
+                        <TextBlock x:Name="SatisfyPngHint" Classes="hint" Margin="56,0,0,14" />
+
+                        <TextBlock x:Name="ParallelLabel" Classes="field" Text="Parallel conversions" />
+                        <ComboBox x:Name="ParallelismCombo" HorizontalAlignment="Stretch" Margin="0,0,0,4" />
+                        <TextBlock x:Name="ParallelHint" Classes="hint" Margin="0,0,0,14" />
+
+                        <CheckBox x:Name="OptimizeCheck" Content="Optimize file size" IsChecked="True" />
+                        <StackPanel x:Name="OptimizationPanel" Margin="0,4,0,0">
+                            <TextBlock x:Name="OptimizationHint" Classes="hint" Margin="28,0,0,12" />
+
+                            <TextBlock x:Name="PngColorsLabel" Classes="field" Text="PNG colors (16–256)" />
+                            <Grid x:Name="PngColorsPanel" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+                                <Slider x:Name="PngColorsSlider" Minimum="16" Maximum="256" Value="256"
+                                        TickFrequency="16" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Width="36" Margin="10,0,0,0" VerticalAlignment="Center"
+                                           TextAlignment="Center"
+                                           Text="{Binding #PngColorsSlider.Value, StringFormat={}{0:0}}" />
+                            </Grid>
+                            <CheckBox x:Name="PngDitherCheck" Content="Dither smooth gradients (Floyd–Steinberg)"
+                                      Margin="0,0,0,10" />
+
+                            <TextBlock x:Name="QualityLabel" Classes="field" Text="JPEG quality (%)" IsVisible="False" />
+                            <Grid x:Name="QualityPanel" ColumnDefinitions="*,Auto" IsVisible="False">
+                                <Slider x:Name="QualitySlider" Minimum="50" Maximum="100" Value="85"
+                                        TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Width="36" Margin="10,0,0,0" VerticalAlignment="Center"
+                                           TextAlignment="Center"
+                                           Text="{Binding #QualitySlider.Value, StringFormat={}{0:0}}" />
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Preview & queue (also the highlighted drop zone) -->
+            <Border x:Name="PreviewDropZone" Grid.Column="4" Classes="card" Padding="14">
+                <DockPanel LastChildFill="True">
+                    <TextBlock x:Name="PreviewTitleHeader" DockPanel.Dock="Top" Classes="h2" Text="Preview &amp; queue" />
+
+                    <Border DockPanel.Dock="Top" Background="{DynamicResource SurfaceElevatedBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10"
+                            Height="120" Margin="0,0,0,8" ClipToBounds="True">
+                        <Grid>
+                            <Image x:Name="PreviewImage" Stretch="Uniform" Margin="8" IsVisible="False" />
+                            <StackPanel x:Name="PreviewPlaceholder" VerticalAlignment="Center"
+                                        HorizontalAlignment="Center" Margin="12">
+                                <TextBlock Text="📎" FontSize="22" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                                <TextBlock x:Name="PreviewPlaceholderTitle" Text="Drop an image or folder" FontSize="12"
+                                           FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" />
+                                <TextBlock x:Name="PreviewPlaceholderDetails" Classes="hint" TextAlignment="Center"
+                                           Margin="0,2,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                        <TextBlock x:Name="PreviewTitle" FontWeight="SemiBold" FontSize="12" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="PreviewDetails" Classes="hint" Margin="0,2,0,0" />
+                    </StackPanel>
+
+                    <TextBlock x:Name="IncludedFilesLabel" DockPanel.Dock="Top" Classes="field" Text="Included files (0)" />
+
+                    <ListBox x:Name="IncludedFilesList" Background="Transparent" SelectionMode="Single"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Details}" FontSize="11" Opacity="0.8"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.Styles>
+                            <Style Selector="ListBoxItem">
+                                <Setter Property="Padding" Value="8,5" />
+                                <Setter Property="CornerRadius" Value="6" />
+                            </Style>
+                        </ListBox.Styles>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- Results -->
+        <Border Grid.Row="1" Classes="card" Margin="0,12,0,12">
+            <Grid RowDefinitions="Auto,Auto,*">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock x:Name="ResultsTitle" Classes="h2" Margin="0" Text="Conversion results" />
+                    <TextBlock x:Name="ResultsSummaryText" Grid.Column="1" Classes="secondary" FontSize="12"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="No conversion yet" />
+                </Grid>
+                <ProgressBar x:Name="ResultsProgressBar" Grid.Row="1" Margin="0,10,0,0" Minimum="0" Maximum="100"
+                             IsVisible="False" />
+                <DataGrid x:Name="ResultsGrid" Grid.Row="2" Margin="0,10,0,0" IsReadOnly="True"
+                          AutoGenerateColumns="False" CanUserReorderColumns="False" CanUserSortColumns="False"
+                          SelectionMode="Single" HeadersVisibility="Column">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Status" Width="110">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Margin="12,0" VerticalAlignment="Center"
+                                               Text="{Binding Status, Converter={x:Static views:ImageConvertorView.StatusConverter}}"
+                                               Classes.success="{Binding IsSuccess}"
+                                               Classes.error="{Binding IsFailed}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="File" Width="200" Binding="{Binding FileName}" />
+                        <DataGridTextColumn Header="Size change" Width="230" Binding="{Binding SizeChange}" />
+                        <DataGridTextColumn Header="Details" Width="*" Binding="{Binding Detail}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+
+        <!-- Footer -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                <TextBlock x:Name="StatusText" Text="Ready" FontSize="13" TextTrimming="CharacterEllipsis" />
+                <ProgressBar x:Name="ProgressBar" Margin="0,8,0,0" Minimum="0" Maximum="100" IsVisible="False" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                <Button x:Name="CancelButton" Classes="secondary" Content="Cancel" IsVisible="False" />
+                <Button x:Name="ClearResultsButton" Classes="secondary" Content="Clear results" />
+                <Button x:Name="ConvertButton" Classes="primary" Content="Convert images" MinWidth="150" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

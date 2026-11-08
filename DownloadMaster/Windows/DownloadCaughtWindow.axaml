@@ -1,0 +1,62 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DownloadMaster.DownloadCaughtWindow"
+        Title="New download"
+        Icon="/Assets/app.ico"
+        Width="600"
+        SizeToContent="Height"
+        CanResize="False"
+        Topmost="True"
+        ShowInTaskbar="True"
+        WindowStartupLocation="CenterScreen">
+    <StackPanel Margin="24" Spacing="12">
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <Image Source="/Assets/app-icon.png" Width="36" Height="36" />
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock x:Name="HeaderText" Text="New download caught" Classes="h2" FontSize="18" />
+                <TextBlock x:Name="SourceText" Classes="secondary" FontSize="12" TextTrimming="CharacterEllipsis" MaxWidth="500" />
+            </StackPanel>
+        </StackPanel>
+
+        <Border Classes="elevated">
+            <StackPanel Spacing="6">
+                <TextBlock x:Name="UrlLabel" Text="Address" Classes="secondary" FontSize="12" />
+                <SelectableTextBlock x:Name="UrlText" TextWrapping="Wrap" MaxHeight="60" FontSize="12" />
+                <TextBlock x:Name="DetailsText" Classes="secondary" FontSize="12" TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <TextBlock x:Name="FileNameLabel" Text="Save as" Classes="secondary" />
+        <TextBox x:Name="FileNameBox" />
+
+        <TextBlock x:Name="FolderLabel" Text="Save to" Classes="secondary" />
+        <Grid ColumnDefinitions="*,Auto">
+            <TextBox x:Name="FolderBox" />
+            <Button Grid.Column="1" Content="..." Classes="secondary" Padding="12,10" Margin="8,0,0,0" Click="BrowseFolder_Click" />
+        </Grid>
+
+        <WrapPanel x:Name="FileOptionsPanel" Orientation="Horizontal">
+            <TextBlock x:Name="ConnectionsLabel" Text="Connections" Classes="secondary" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ComboBox x:Name="ConnectionsCombo" MinWidth="80" SelectedIndex="1">
+                <ComboBoxItem Content="4" />
+                <ComboBoxItem Content="8" />
+                <ComboBoxItem Content="12" />
+                <ComboBoxItem Content="16" />
+            </ComboBox>
+        </WrapPanel>
+
+        <WrapPanel x:Name="MediaOptionsPanel" Orientation="Horizontal" IsVisible="False">
+            <TextBlock x:Name="QualityLabel" Text="Quality" Classes="secondary" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ComboBox x:Name="QualityCombo" MinWidth="100" />
+            <TextBlock x:Name="FormatLabel" Text="Format" Classes="secondary" VerticalAlignment="Center" Margin="16,0,8,0" />
+            <ComboBox x:Name="FormatCombo" MinWidth="100" />
+        </WrapPanel>
+
+        <TextBlock x:Name="CookiesText" Classes="secondary" FontSize="12" TextWrapping="Wrap" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,8,0,0">
+            <Button x:Name="CancelButton" Content="Cancel" Classes="secondary" IsCancel="True" Click="CancelButton_Click" />
+            <Button x:Name="DownloadButton" Content="Download" Classes="primary" IsDefault="True" Padding="22,10" Click="DownloadButton_Click" />
+        </StackPanel>
+    </StackPanel>
+</Window>

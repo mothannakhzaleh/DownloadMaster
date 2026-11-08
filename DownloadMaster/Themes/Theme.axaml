@@ -1,0 +1,92 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Palette per theme variant. Switch with Application.RequestedThemeVariant (see ThemeService). -->
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+            <Color x:Key="BackgroundColor">#0F1117</Color>
+            <Color x:Key="SurfaceColor">#181B24</Color>
+            <Color x:Key="SurfaceElevatedColor">#222633</Color>
+            <Color x:Key="BorderColor">#2E3447</Color>
+            <Color x:Key="TextPrimaryColor">#F3F4F8</Color>
+            <Color x:Key="TextSecondaryColor">#B8C0D4</Color>
+            <Color x:Key="AccentColor">#6366F1</Color>
+            <Color x:Key="AccentHoverColor">#818CF8</Color>
+            <Color x:Key="SelectionColor">#2A3350</Color>
+            <Color x:Key="PopupBackgroundColor">#1A1E2A</Color>
+            <Color x:Key="SuccessColor">#22C55E</Color>
+            <Color x:Key="ErrorColor">#EF4444</Color>
+            <SolidColorBrush x:Key="BackgroundBrush" Color="#0F1117" />
+            <SolidColorBrush x:Key="SurfaceBrush" Color="#181B24" />
+            <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="#222633" />
+            <SolidColorBrush x:Key="BorderBrush" Color="#2E3447" />
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F3F4F8" />
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="#B8C0D4" />
+            <SolidColorBrush x:Key="AccentBrush" Color="#6366F1" />
+            <SolidColorBrush x:Key="AccentHoverBrush" Color="#818CF8" />
+            <SolidColorBrush x:Key="SelectionBrush" Color="#2A3350" />
+            <SolidColorBrush x:Key="PopupBackgroundBrush" Color="#1A1E2A" />
+            <SolidColorBrush x:Key="SuccessBrush" Color="#22C55E" />
+            <SolidColorBrush x:Key="ErrorBrush" Color="#EF4444" />
+            <Color x:Key="SystemAccentColor">#6366F1</Color>
+            <Color x:Key="SystemAccentColorLight1">#818CF8</Color>
+            <Color x:Key="SystemAccentColorLight2">#818CF8</Color>
+            <Color x:Key="SystemAccentColorDark1">#6366F1</Color>
+            <!-- Fluent Expander (download list header) in the app palette -->
+            <SolidColorBrush x:Key="ExpanderHeaderBackground" Color="#222633" />
+            <SolidColorBrush x:Key="ExpanderHeaderBackgroundPointerOver" Color="#2A3350" />
+            <SolidColorBrush x:Key="ExpanderHeaderBackgroundPressed" Color="#2A3350" />
+            <SolidColorBrush x:Key="ExpanderHeaderBorderBrush" Color="#2E3447" />
+            <SolidColorBrush x:Key="ExpanderHeaderBorderBrushPointerOver" Color="#2E3447" />
+            <SolidColorBrush x:Key="ExpanderHeaderBorderBrushPressed" Color="#2E3447" />
+            <SolidColorBrush x:Key="ExpanderHeaderForeground" Color="#F3F4F8" />
+            <SolidColorBrush x:Key="ExpanderHeaderForegroundPointerOver" Color="#F3F4F8" />
+            <SolidColorBrush x:Key="ExpanderHeaderForegroundPressed" Color="#F3F4F8" />
+            <SolidColorBrush x:Key="ExpanderChevronForeground" Color="#F3F4F8" />
+            <SolidColorBrush x:Key="ExpanderContentBackground" Color="#181B24" />
+            <SolidColorBrush x:Key="ExpanderContentBorderBrush" Color="#2E3447" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+            <Color x:Key="BackgroundColor">#F4F6FB</Color>
+            <Color x:Key="SurfaceColor">#FFFFFF</Color>
+            <Color x:Key="SurfaceElevatedColor">#EEF2FF</Color>
+            <Color x:Key="BorderColor">#D8DEEB</Color>
+            <Color x:Key="TextPrimaryColor">#111827</Color>
+            <Color x:Key="TextSecondaryColor">#475569</Color>
+            <Color x:Key="AccentColor">#4F46E5</Color>
+            <Color x:Key="AccentHoverColor">#6366F1</Color>
+            <Color x:Key="SelectionColor">#E0E7FF</Color>
+            <Color x:Key="PopupBackgroundColor">#FFFFFF</Color>
+            <Color x:Key="SuccessColor">#16A34A</Color>
+            <Color x:Key="ErrorColor">#DC2626</Color>
+            <SolidColorBrush x:Key="BackgroundBrush" Color="#F4F6FB" />
+            <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="#EEF2FF" />
+            <SolidColorBrush x:Key="BorderBrush" Color="#D8DEEB" />
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="#111827" />
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="#475569" />
+            <SolidColorBrush x:Key="AccentBrush" Color="#4F46E5" />
+            <SolidColorBrush x:Key="AccentHoverBrush" Color="#6366F1" />
+            <SolidColorBrush x:Key="SelectionBrush" Color="#E0E7FF" />
+            <SolidColorBrush x:Key="PopupBackgroundBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="SuccessBrush" Color="#16A34A" />
+            <SolidColorBrush x:Key="ErrorBrush" Color="#DC2626" />
+            <Color x:Key="SystemAccentColor">#4F46E5</Color>
+            <Color x:Key="SystemAccentColorLight1">#6366F1</Color>
+            <Color x:Key="SystemAccentColorLight2">#6366F1</Color>
+            <Color x:Key="SystemAccentColorDark1">#4F46E5</Color>
+            <!-- Fluent Expander (download list header) in the app palette -->
+            <SolidColorBrush x:Key="ExpanderHeaderBackground" Color="#EEF2FF" />
+            <SolidColorBrush x:Key="ExpanderHeaderBackgroundPointerOver" Color="#E0E7FF" />
+            <SolidColorBrush x:Key="ExpanderHeaderBackgroundPressed" Color="#E0E7FF" />
+            <SolidColorBrush x:Key="ExpanderHeaderBorderBrush" Color="#D8DEEB" />
+            <SolidColorBrush x:Key="ExpanderHeaderBorderBrushPointerOver" Color="#D8DEEB" />
+            <SolidColorBrush x:Key="ExpanderHeaderBorderBrushPressed" Color="#D8DEEB" />
+            <SolidColorBrush x:Key="ExpanderHeaderForeground" Color="#111827" />
+            <SolidColorBrush x:Key="ExpanderHeaderForegroundPointerOver" Color="#111827" />
+            <SolidColorBrush x:Key="ExpanderHeaderForegroundPressed" Color="#111827" />
+            <SolidColorBrush x:Key="ExpanderChevronForeground" Color="#111827" />
+            <SolidColorBrush x:Key="ExpanderContentBackground" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="ExpanderContentBorderBrush" Color="#D8DEEB" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

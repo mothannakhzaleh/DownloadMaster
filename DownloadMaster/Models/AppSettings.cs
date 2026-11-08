@@ -19,6 +19,32 @@ public sealed class AppSettings
     public InstagramBrowser InstagramBrowser { get; set; } = InstagramBrowser.Chrome;
     public string InstagramCookiesPath { get; set; } = string.Empty;
     public int FileDownloadConnections { get; set; } = 8;
+    /// <summary>Closing the window hides it to the system tray / menu bar instead of exiting.</summary>
+    public bool MinimizeToTray { get; set; } = true;
+
+    /// <summary>Let the browser extension hand browser downloads to DownloadMaster.</summary>
+    public bool InterceptBrowserDownloads { get; set; } = true;
+
+    /// <summary>File extensions the extension always hands over (others only when large).</summary>
+    public List<string> InterceptFileTypes { get; set; } =
+    [
+        "zip", "7z", "rar", "tar", "gz", "xz", "bz2",
+        "exe", "msi", "dmg", "pkg", "deb", "rpm", "appimage", "apk", "iso", "img",
+        "mp4", "mkv", "avi", "mov", "webm", "wmv", "flv",
+        "mp3", "flac", "wav", "m4a", "aac", "ogg",
+        "pdf", "epub"
+    ];
+
+    /// <summary>Sort downloads into Video/Music/Programs/Compressed/Documents/Images/Other sub-folders of the save folder.</summary>
+    public bool SortIntoCategoryFolders { get; set; }
+
+    /// <summary>Queue scheduler: hold new downloads until this local time (HH:mm) each day.</summary>
+    public bool SchedulerStartEnabled { get; set; }
+    public string SchedulerStartTime { get; set; } = "02:00";
+
+    /// <summary>Queue scheduler: pause running file downloads at this local time (HH:mm) each day.</summary>
+    public bool SchedulerStopEnabled { get; set; }
+    public string SchedulerStopTime { get; set; } = "07:00";
 }
 
 public sealed class VideoInfo

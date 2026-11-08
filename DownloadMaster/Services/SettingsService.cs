@@ -6,11 +6,29 @@ namespace DownloadMaster.Services;
 
 public sealed class SettingsService
 {
-    private static readonly string SettingsDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "DownloadMaster");
+    private static readonly string SettingsDir = AppPaths.DataDir;
 
     private static readonly string SettingsPath = Path.Combine(SettingsDir, "settings.json");
+
+    /// <summary>Videos/DownloadMaster (Movies on macOS); falls back to the home folder when the OS has no videos folder.</summary>
+    public static string DefaultSaveFolder
+    {
+        get
+        {
+            // Sandboxed runs (tests) save inside the sandbox, never in the user's folders.
+            if (AppPaths.SandboxDir is { } sandbox)
+                return Path.Combine(sandbox, "downloads");
+
+            var videos = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
+            if (string.IsNullOrWhiteSpace(videos))
+            {
+                var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                videos = Path.Combine(home, OperatingSystem.IsMacOS() ? "Movies" : "Videos");
+            }
+
+            return Path.Combine(videos, "DownloadMaster");
+        }
+    }
 
     public AppSettings Current { get; private set; } = CreateDefault();
 
@@ -34,7 +52,7 @@ public sealed class SettingsService
         }
 
         if (string.IsNullOrWhiteSpace(Current.DefaultSavePath))
-            Current.DefaultSavePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "DownloadMaster");
+            Current.DefaultSavePath = DefaultSaveFolder;
 
         Directory.CreateDirectory(Current.DefaultSavePath);
         ToolLocator.ConfigureBundled();
@@ -52,6 +70,6 @@ public sealed class SettingsService
 
     private static AppSettings CreateDefault() => new()
     {
-        DefaultSavePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "DownloadMaster")
+        DefaultSavePath = DefaultSaveFolder
     };
 }

@@ -570,10 +570,48 @@ public sealed class LocalizationService
 
     public AppLanguage Current { get; private set; } = AppLanguage.English;
 
-    public string Get(string key) =>
-        Strings.TryGetValue(Current, out var lang) && lang.TryGetValue(key, out var value)
-            ? value
-            : Strings[AppLanguage.English].GetValueOrDefault(key, key);
+    public string Get(string key)
+    {
+        // Feature string tables (Services/Localization/*Strings.cs) win over the legacy tables,
+        // so features can add or update keys: Arabic table for Arabic, English table otherwise.
+        if (Current == AppLanguage.Arabic)
+        {
+            foreach (var table in ExtraTables)
+            {
+                if (table.Arabic.TryGetValue(key, out var ar))
+                    return ar;
+            }
+        }
+
+        var isCoreKey = Strings[AppLanguage.English].ContainsKey(key) && !ExtendedEnglish.ContainsKey(key);
+        if (Current is not AppLanguage.English and not AppLanguage.Arabic && isCoreKey
+            && Strings.TryGetValue(Current, out var translated) && translated.TryGetValue(key, out var coreValue))
+        {
+            // Core keys have real translations for every language — keep them.
+            return coreValue;
+        }
+
+        foreach (var table in ExtraTables)
+        {
+            if (table.English.TryGetValue(key, out var en))
+                return en;
+        }
+
+        if (Strings.TryGetValue(Current, out var lang) && lang.TryGetValue(key, out var value))
+            return value;
+
+        return Strings[AppLanguage.English].GetValueOrDefault(key, key);
+    }
+
+    private static readonly (IReadOnlyDictionary<string, string> English, IReadOnlyDictionary<string, string> Arabic)[] ExtraTables =
+    [
+        (Localization.PlatformStrings.English, Localization.PlatformStrings.Arabic),
+        (Localization.ImageConvertStrings.English, Localization.ImageConvertStrings.Arabic),
+        (Localization.MediaConvertStrings.English, Localization.MediaConvertStrings.Arabic),
+        (Localization.SpeechStrings.English, Localization.SpeechStrings.Arabic),
+        (Localization.EngineStrings.English, Localization.EngineStrings.Arabic),
+        (Localization.QueueStrings.English, Localization.QueueStrings.Arabic),
+    ];
 
     public void SetLanguage(AppLanguage language) => Current = language;
 

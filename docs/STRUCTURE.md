@@ -1,172 +1,123 @@
-# Project Structure
+# DownloadMaster — project structure
 
-Complete layout and architecture reference for **DownloadMaster**.
-
----
+Cross-platform (Windows / macOS / Linux) Avalonia app on .NET 10, a Chrome/Edge extension, regression tests,
+and scripts. Long-term plan (native C++ rewrite): [plans/upgrade-plan.md](plans/upgrade-plan.md).
 
 ## Repository tree
 
 ```
 VideoDownloader/
-│
-├── DownloadMaster.sln          # Visual Studio solution (Release | x64)
-├── DownloadMaster.slnx         # Solution filter (optional)
-├── Directory.Build.props       # Shared MSBuild: Release, x64, win-x64 RID
-│
-├── LICENSE                     # MIT — Copyright (c) 2026 mothannakh
-├── THIRD_PARTY_LICENSES.md     # yt-dlp, FFmpeg, .NET, NuGet licenses
-├── README.md                   # Project overview and quick start
-├── .gitignore                  # Git ignore rules (binaries, build output)
-│
+├── DownloadMaster.sln / .slnx       # App + test projects (Debug/Release, Any CPU)
+├── Directory.Build.props            # Defaults every project to Release
+├── README.md · LICENSE · THIRD_PARTY_LICENSES.md
+├── .github/workflows/
+│   ├── ci.yml                       # Build + tests on Windows / Linux / macOS, extension check
+│   └── release.yml                  # Tag v* → standalone packages + extension zip + GitHub Release
+├── DownloadMaster/                  # The app (see below)
+├── browser-extension/               # Chrome / Edge / Brave / Opera extension (Manifest V3)
+│   ├── manifest.json · background.js · content.js · overlay.css
+│   ├── popup/                       # Extension popup (status, toggles, streams in this tab)
+│   └── icons/
+├── tests/
+│   ├── ImageConversion.Regression/  # 39 image conversion checks
+│   └── DownloadEngine.Regression/   # Multi-connection engine checks against a local range server
+├── scripts/                         # .bat (Windows) and .sh (Linux / macOS)
+│   ├── setup-tools    build    run    test    publish    clean.bat    release-github.bat
+│   └── screenshots.ps1              # Regenerates docs/images from the ship build
 ├── docs/
-│   ├── img1.png                # README screenshot (video tab)
-│   ├── img2.png                # README screenshot (Instagram tab)
-│   ├── release-notes-template.md
-│   └── STRUCTURE.md            # This file
-│
-├── start.bat                   # Build Release x64 + run app
-├── build.bat                   # Build Release x64 only
-├── publish-standalone.bat      # Self-contained publish → publish/
-├── release-github.bat          # Publish + zip + GitHub release
-├── setup-tools.bat             # Download yt-dlp, verify FFmpeg in tools/
-│
-└── DownloadMaster/             # Main WPF project (.NET 8)
-    ├── DownloadMaster.csproj
-    ├── App.xaml / App.xaml.cs
-    ├── MainWindow.xaml / MainWindow.xaml.cs
-    ├── SettingsWindow.xaml / SettingsWindow.xaml.cs
-    │
-    ├── Assets/
-    │   ├── app.ico             # Window + exe icon
-    │   └── app-icon.png        # Header logo
-    │
-    ├── Models/
-    │   ├── AppSettings.cs      # User settings + VideoInfo DTOs
-    │   ├── DownloadItem.cs     # Queue item (INotifyPropertyChanged)
-    │   └── Enums.cs            # DownloadStatus, AppTheme, AppLanguage
-    │
-    ├── Services/
-    │   ├── YtDlpService.cs     # yt-dlp process: fetch info, download, progress
-    │   ├── DownloadManager.cs  # Queue, concurrency, retries
-    │   ├── ToolLocator.cs      # Resolves bundled tools next to exe
-    │   ├── SettingsService.cs  # Load/save %AppData%\DownloadMaster\settings.json
-    │   ├── ThemeService.cs     # Dark / Light theme switching
-    │   ├── LocalizationService.cs  # EN / AR strings
-    │   ├── VideoFormatAnalyzer.cs  # Parse yt-dlp JSON → quality/format lists
-    │   └── FormatHelpers.cs    # Duration, bytes, filename sanitization
-    │
-    ├── Styles/
-    │   └── Controls.xaml         # Buttons, TextBox, ComboBox templates
-    │
-    ├── Themes/
-    │   ├── DarkTheme.xaml
-    │   └── LightTheme.xaml
-    │
-    └── tools/                    # Bundled external tools (copied to output)
-        ├── README.txt
-        ├── yt-dlp.exe            # Gitignored — run setup-tools.bat
-        └── ffmpeg/
-            ├── ffmpeg.exe        # Gitignored
-            └── ffprobe.exe       # Gitignored
+│   ├── images/                      # README screenshots
+│   ├── plans/upgrade-plan.md
+│   ├── STRUCTURE.md · TODO.md · release-notes-template.md
+├── ship/                            # Ready-to-run builds from scripts/publish (gitignored)
+└── test-output/                     # Test runs and sandboxes (gitignored)
 ```
 
----
-
-## Build output (gitignored)
+## The app — `DownloadMaster/`
 
 ```
-DownloadMaster/bin/x64/Release/net8.0-windows/win-x64/
-├── DownloadMaster.exe
-├── DownloadMaster.dll
-└── tools/                      # Copied from project tools/
-
-publish/                          # Created by publish-standalone.bat
-├── DownloadMaster.exe            # Single-file self-contained
-└── tools/
+DownloadMaster/
+├── Program.cs                 # Entry point; hands off to an already running instance
+├── App.axaml(.cs)             # Theme + styles, tray icon and menu, local bridge startup
+├── MainWindow.axaml(.cs)      # Video / Instagram / Files / Convert tabs and the download queue
+├── Windows/                   # Dialogs
+│   ├── DownloadCaughtWindow   # "New download caught" popup (from the extension, clipboard, …)
+│   ├── ExtensionInstallWindow # 3-step browser extension installer
+│   ├── BatchDownloadWindow    # part_[01-20].rar style batch links
+│   ├── SettingsWindow · AboutWindow · InstagramCookiesWindow · FinishCountdownWindow
+├── Views/                     # Convert sub-tabs: Video, Image, Audio, Speech
+├── Controls/                  # SegmentedProgressBar (per-connection progress)
+├── Models/                    # DownloadItem, AppSettings, conversion settings, catalogs
+├── Services/
+│   ├── Downloads/             # DownloadManager (queue, retry), HttpFileDownloadService (multi-connection
+│   │                          # engine, dynamic splitting, resume), YtDlpService, SpeedLimiter, checksums
+│   ├── Bridge/                # LocalBridgeServer (127.0.0.1:45780), SingleInstance, request models
+│   ├── Queue/                 # Scheduler, finish actions, categories, batch patterns, clipboard watcher
+│   ├── Convert/               # FFmpeg video/audio, Magick.NET images, previews
+│   ├── Speech/                # Windows voices, macOS say, Linux espeak-ng / spd-say
+│   ├── Instagram/             # Profile browsing, cookies, direct media download
+│   ├── Ui/                    # Dialogs, file pickers, open file/folder/URL (cross-platform)
+│   ├── Localization/          # Feature string tables (English + Arabic)
+│   └── AppPaths · SettingsService · ToolLocator · ThemeService · AutoStartService · BrowserExtensionInstaller
+├── Styles/Controls.axaml      # Shared look: Button.primary/secondary, RadioButton.chip, Border.card, tabs
+├── Themes/Theme.axaml         # Dark and Light palettes
+├── Assets/                    # Icons
+└── tools/                     # yt-dlp + FFmpeg (binaries gitignored; scripts/setup-tools)
 ```
 
----
-
-## Architecture
+## How the parts talk
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      MainWindow (WPF UI)                     │
-│  URL input · Fetch · Download · Queue · Settings · Theme     │
-└───────────────┬─────────────────────────────┬───────────────┘
-                │                             │
-        ┌───────▼────────┐            ┌───────▼────────┐
-        │ DownloadManager │            │  YtDlpService  │
-        │  queue · retry  │───────────▶│  subprocess    │
-        └───────┬────────┘            └───────┬────────┘
-                │                             │
-        ┌───────▼────────┐            ┌───────▼────────┐
-        │ DownloadItem   │            │   ToolLocator  │
-        │  progress UI   │            │ tools\yt-dlp   │
-        └────────────────┘            │ tools\ffmpeg   │
-                                        └────────────────┘
+ Browser ──extension──▶ 127.0.0.1:45780 (LocalBridgeServer) ──▶ DownloadCaughtWindow ──▶ DownloadManager
+                                                                                          ├─ HttpFileDownloadService (files)
+ MainWindow tabs / clipboard / batch / tray ───────────────────────────────────────────▶ └─ YtDlpService (videos, pages)
+                                                                                               │
+                                                                    tools/yt-dlp, tools/ffmpeg ◀┘ (ToolLocator: bundled → PATH → Homebrew)
 ```
 
-### Data flow
+- **Browser downloads**: the extension cancels the browser download and POSTs `/api/v1/download` with cookies,
+  referrer and user agent. The app shows the caught popup; the item carries those headers on every request.
+- **Videos**: the extension's video button posts `/api/v1/media-stream` (a sniffed HLS / DASH / MP4 stream, or the
+  page itself) → yt-dlp with `--add-header`, or the file engine for plain MP4.
+- **Files engine**: probe (`Range: bytes=0-0`) → N segments → finished connections split the largest remaining
+  segment → state saved about every second to `file-downloads/<id>.json` → `.part` renamed when complete → SHA-256.
+- **Expired links**: HTTP 403/410 keeps the `.part`; catching the same file again offers to continue it.
 
-1. User pastes URL → **Fetch** calls `YtDlpService.FetchInfoAsync` (`--dump-single-json`).
-2. **VideoFormatAnalyzer** reads formats → sets quality/format dropdowns.
-3. **Download** enqueues `DownloadItem` → **DownloadManager** runs yt-dlp with progress parsing.
-4. On complete → **Open folder** / **Play** use `OutputPath` on the item.
+## Data and settings
 
-### Settings persistence
+`AppPaths.DataDir` = `%AppData%\DownloadMaster` (Windows) or `~/.config/DownloadMaster` (macOS / Linux), or
+`$DOWNLOADMASTER_DATA_DIR` when set (tests and `scripts\run.bat --sandbox` use `test-output/`).
 
-| Path | Purpose |
+| File | Purpose |
 |------|---------|
-| `%AppData%\DownloadMaster\settings.json` | Theme, language, save path, concurrency |
+| `settings.json` | Save folder, theme, language, connections, tray, scheduler, interception, categories |
+| `file-downloads/*.json` | Resume state per direct-file download |
+| `instagram-cookies.txt` | Saved Instagram session (never committed) |
+| `browser-extension/` | Copy of the extension that the browser loads ("Load unpacked") |
 
-### External processes
+## External programs
 
-| Binary | Role |
-|--------|------|
-| `tools/yt-dlp.exe` | Metadata fetch + download |
-| `tools/ffmpeg/ffmpeg.exe` | Merge/remux (via yt-dlp `--ffmpeg-location`) |
-| `tools/ffmpeg/ffprobe.exe` | Probing (required alongside ffmpeg) |
+| Program | Role |
+|---------|------|
+| `tools/yt-dlp(.exe)` | Video metadata and downloads, browser cookie export |
+| `tools/ffmpeg/ffmpeg(.exe)`, `ffprobe(.exe)` | Merging, Convert tabs, probing |
+| `say` / `espeak-ng` / `spd-say` | Speech tab on macOS / Linux |
 
----
-
-## Key source files
-
-| File | Responsibility |
-|------|----------------|
-| `YtDlpService.cs` | Builds yt-dlp CLI args, parses JSON and `[download]` progress |
-| `DownloadManager.cs` | Semaphore for max concurrent downloads, retry loop |
-| `ToolLocator.cs` | Resolves `AppContext.BaseDirectory/tools/` only |
-| `MainWindow.xaml.cs` | Fetch/download handlers, playlist UI, open/play actions |
-| `LocalizationService.cs` | String table for EN / AR |
-| `Directory.Build.props` | Forces Release + x64 + win-x64 for all projects |
-
----
-
-## Scripts reference
+## Scripts
 
 | Script | Steps |
 |--------|-------|
-| `setup-tools.bat` | Download yt-dlp; check FFmpeg in `tools/ffmpeg/` |
-| `start.bat` | Clean Debug → `dotnet build -c Release` → launch exe |
-| `build.bat` | Clean Debug → `dotnet build -c Release` |
-| `publish-standalone.bat` | Clean → `dotnet publish` single-file → copy tools → `publish/` |
+| `scripts/setup-tools` | Download yt-dlp and FFmpeg into `DownloadMaster/tools/` |
+| `scripts/build` | `dotnet build -c Release` |
+| `scripts/run` | Build, then start (`--sandbox` = data in `test-output/sandbox`) |
+| `scripts/test` | `dotnet run` every project in `tests/` with a sandbox data folder |
+| `scripts/publish` | Self-contained single-file publish → `ship/<rid>/` with `tools/` and `browser-extension/` |
+| `scripts/clean.bat` | Delete `bin/`, `obj/`, `test-output/`, `ship/` |
+| `scripts/release-github.bat` | Local win-x64 release upload (fallback; prefer tagging) |
+| `scripts/screenshots.ps1` | Run the ship build sandboxed and capture `docs/images/*.png` |
 
----
+## Release checklist
 
-## GitHub upload checklist
-
-- [ ] Run `setup-tools.bat` locally (tools stay gitignored)
-- [ ] Confirm `LICENSE` and `THIRD_PARTY_LICENSES.md` are committed
-- [ ] Do **not** commit `bin/`, `obj/`, `publish/`, `.vs/`, or large `.exe` files
-- [ ] Update clone URL in `README.md` with your GitHub username
-- [ ] Optional: add GitHub release with `publish/` zip for end users
-
----
-
-## Author & links
-
-**Copyright © 2026 mothannakh**
-
-- [https://satisfy.live/](https://satisfy.live/)
-- [https://www.youtube.com/@ToPSourceDevelopment](https://www.youtube.com/@ToPSourceDevelopment)
+- [ ] `scripts\test.bat` (or `scripts/test.sh`) passes
+- [ ] Update **What's new** in `docs/release-notes-template.md`
+- [ ] `git tag vX.Y.Z && git push origin vX.Y.Z` — GitHub Actions builds every platform and publishes
+- [ ] Never commit `bin/`, `obj/`, `ship/`, `test-output/`, or tool binaries

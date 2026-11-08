@@ -15,9 +15,19 @@ public sealed class DownloadItem : INotifyPropertyChanged
     private string _etaText = string.Empty;
     private string _outputPath = string.Empty;
     private string _partFilePath = string.Empty;
+    private string _url = string.Empty;
+    private IReadOnlyList<SegmentProgress> _segments = [];
+    private string _sha256 = string.Empty;
+    private bool _isComputingSha256;
+    private bool _isLinkExpired;
 
     public string Id { get; init; } = Guid.NewGuid().ToString("N");
-    public string Url { get; init; } = string.Empty;
+    /// <summary>Settable so "Refresh download address" can swap in a fresh link for the same file.</summary>
+    public string Url
+    {
+        get => _url;
+        set { _url = value; OnPropertyChanged(); }
+    }
     public DownloadKind Kind { get; init; } = DownloadKind.Video;
     public bool IsInstagram { get; init; }
     public InstagramBrowser InstagramBrowser { get; init; } = InstagramBrowser.Chrome;
@@ -31,6 +41,45 @@ public sealed class DownloadItem : INotifyPropertyChanged
     public string SaveFolder { get; init; } = string.Empty;
     public string? DesiredFileName { get; init; }
     public int ConnectionCount { get; init; } = 8;
+    /// <summary>
+    /// Headers captured by the browser extension (Cookie, Referer, User-Agent, Authorization...).
+    /// Sent with every request for this item; kept in memory only. Replaced on address refresh.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? RequestHeaders { get; set; }
+
+    /// <summary>
+    /// Live per-connection progress of a direct-file download (fractions of the file), refreshed
+    /// with the ~350 ms progress throttle. Empty for yt-dlp/Instagram downloads or unknown sizes.
+    /// </summary>
+    public IReadOnlyList<SegmentProgress> Segments
+    {
+        get => _segments;
+        set { _segments = value ?? []; OnPropertyChanged(); OnPropertyChanged(nameof(HasSegments)); }
+    }
+
+    public bool HasSegments => _segments.Count > 0;
+
+    /// <summary>Lower-case hex SHA-256 of the finished file; empty until computed (after completion).</summary>
+    public string Sha256
+    {
+        get => _sha256;
+        set { _sha256 = value ?? string.Empty; OnPropertyChanged(); OnPropertyChanged(nameof(HasSha256)); }
+    }
+
+    public bool HasSha256 => !string.IsNullOrEmpty(_sha256);
+
+    public bool IsComputingSha256
+    {
+        get => _isComputingSha256;
+        set { _isComputingSha256 = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>The server answered 403/410 on resume: waiting for a fresh link (Refresh download address).</summary>
+    public bool IsLinkExpired
+    {
+        get => _isLinkExpired;
+        set { _isLinkExpired = value; OnPropertyChanged(); }
+    }
     public string PartFilePath
     {
         get => _partFilePath;
@@ -150,6 +199,13 @@ public sealed class DownloadItem : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void OnPropertyChanged([CallerMemberName] string? name = null) =>
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    // Downloads update items from worker threads; Avalonia bindings must be notified on the UI thread.
+    private void OnPropertyChanged([CallerMemberName] string? name = null)
+    {
+        var args = new PropertyChangedEventArgs(name);
+        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+            PropertyChanged?.Invoke(this, args);
+        else
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => PropertyChanged?.Invoke(this, args));
+    }
 }

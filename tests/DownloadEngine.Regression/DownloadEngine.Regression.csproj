@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Headless direct-file download engine regressions (Windows, macOS, Linux, CI).
+    Run from the repo root:  dotnet run (project tests/DownloadEngine.Regression) -c Release
+    Starts a local range-capable HTTP server on 127.0.0.1 (random port). Every file it writes goes
+    under the repo's test-output/engine-regression folder; nothing touches Downloads/Videos or the
+    real app profile (DOWNLOADMASTER_DATA_DIR is pointed inside test-output).
+    Links the UI-free engine sources instead of referencing the Avalonia WinExe app.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>DownloadEngine.Regression</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- DownloadItem marshals PropertyChanged through Avalonia's dispatcher. Keep in sync with DownloadMaster/DownloadMaster.csproj. -->
+    <PackageReference Include="Avalonia" Version="11.3.22" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\DownloadMaster\Models\DownloadItem.cs" Link="Linked\DownloadItem.cs" />
+    <Compile Include="..\..\DownloadMaster\Models\Enums.cs" Link="Linked\Enums.cs" />
+    <Compile Include="..\..\DownloadMaster\Models\FileDownloadState.cs" Link="Linked\FileDownloadState.cs" />
+    <Compile Include="..\..\DownloadMaster\Models\SegmentProgress.cs" Link="Linked\SegmentProgress.cs" />
+    <Compile Include="..\..\DownloadMaster\Services\AppPaths.cs" Link="Linked\AppPaths.cs" />
+    <Compile Include="..\..\DownloadMaster\Services\Downloads\DirectDownloadLinkResolver.cs" Link="Linked\DirectDownloadLinkResolver.cs" />
+    <Compile Include="..\..\DownloadMaster\Services\Downloads\DownloadAddressRefresh.cs" Link="Linked\DownloadAddressRefresh.cs" />
+    <Compile Include="..\..\DownloadMaster\Services\Downloads\DownloadProgressReport.cs" Link="Linked\DownloadProgressReport.cs" />
+    <Compile Include="..\..\DownloadMaster\Services\Downloads\FileChecksumService.cs" Link="Linked\FileChecksumService.cs" />
+    <Compile Include="..\..\DownloadMaster\Services\Downloads\FileDownloadStateStore.cs" Link="Linked\FileDownloadStateStore.cs" />
+    <Compile Include="..\..\DownloadMaster\Services\FormatHelpers.cs" Link="Linked\FormatHelpers.cs" />
+    <Compile Include="..\..\DownloadMaster\Services\Downloads\HttpFileDownloadService.cs" Link="Linked\HttpFileDownloadService.cs" />
+    <Compile Include="..\..\DownloadMaster\Services\Downloads\SpeedLimiter.cs" Link="Linked\SpeedLimiter.cs" />
+  </ItemGroup>
+</Project>

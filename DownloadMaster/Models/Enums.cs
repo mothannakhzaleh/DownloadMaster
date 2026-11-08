@@ -36,8 +36,12 @@ public enum AppLanguage
     Norwegian
 }
 
+// Values are persisted in settings.json as numbers — only append new browsers.
 public enum InstagramBrowser
 {
     Chrome,
-    Edge
+    Edge,
+    Chromium,
+    Brave,
+    Firefox
 }

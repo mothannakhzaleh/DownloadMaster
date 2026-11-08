@@ -1,0 +1,311 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:DownloadMaster.Views"
+        xmlns:controls="using:DownloadMaster.Controls"
+        x:Class="DownloadMaster.MainWindow"
+        Title="DownloadMaster"
+        Icon="/Assets/app.ico"
+        Height="900" Width="1080"
+        MinHeight="640" MinWidth="720"
+        WindowStartupLocation="CenterScreen">
+    <Grid x:Name="RootLayoutGrid" Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" MinHeight="220" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,20" ColumnDefinitions="*,Auto">
+            <StackPanel Orientation="Horizontal">
+                <Image Source="/Assets/app-icon.png" Width="40" Height="40" Margin="0,0,14,0"
+                       RenderOptions.BitmapInterpolationMode="HighQuality" />
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="TitleText" Text="DownloadMaster" Classes="h1" />
+                    <TextBlock x:Name="SubtitleText" Text="Multi-platform video download manager"
+                               FontSize="14" Classes="secondary" Margin="0,6,0,0" />
+                </StackPanel>
+            </StackPanel>
+            <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                <ComboBox x:Name="LanguageCombo" Width="140" Margin="0,0,10,0"
+                          SelectionChanged="LanguageCombo_SelectionChanged">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DisplayName}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button x:Name="ThemeButton" Content="Theme" Classes="secondary" Margin="0,0,10,0" Click="ThemeButton_Click" />
+                <Button x:Name="AboutButton" Content="About" Classes="secondary" Margin="0,0,10,0" Click="AboutButton_Click" />
+                <Button x:Name="SettingsButton" Content="Settings" Classes="secondary" Click="SettingsButton_Click" />
+            </WrapPanel>
+        </Grid>
+
+        <!-- Source tabs -->
+        <TabControl x:Name="SourceTabs" Grid.Row="1" Margin="0,0,0,16"
+                    SelectionChanged="SourceTabs_SelectionChanged">
+            <TabItem x:Name="VideoTab" Header="Video">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <Border Classes="card" Margin="0,8,0,0" VerticalAlignment="Top">
+                    <StackPanel Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBox x:Name="UrlBox" />
+                            <Button x:Name="FetchButton" Grid.Column="1" Content="Fetch" Classes="secondary" Margin="10,0,0,0" Click="FetchButton_Click" />
+                            <Button x:Name="DownloadButton" Grid.Column="2" Content="Download" Classes="primary" Margin="10,0,0,0" Click="DownloadButton_Click" />
+                        </Grid>
+                        <WrapPanel Orientation="Horizontal">
+                            <TextBlock x:Name="QualityLabel" Text="Quality" VerticalAlignment="Center" Classes="secondary" Margin="0,0,8,0" />
+                            <ComboBox x:Name="QualityCombo" MinWidth="90" />
+                            <TextBlock x:Name="FormatLabel" Text="Format" VerticalAlignment="Center" Classes="secondary" Margin="16,0,8,0" />
+                            <ComboBox x:Name="FormatCombo" MinWidth="90" />
+                        </WrapPanel>
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <TextBlock x:Name="SavePathLabel" Text="Save to" VerticalAlignment="Center" Classes="secondary" Margin="0,0,8,0" />
+                            <TextBox x:Name="SavePathBox" Grid.Column="1" />
+                            <Button x:Name="BrowseSavePathButton" Grid.Column="2" Content="..." Margin="8,0,0,0"
+                                    Classes="secondary" Padding="12,10" Click="BrowseSavePath_Click" />
+                        </Grid>
+                        <TextBlock x:Name="PreviewText" TextWrapping="Wrap" Classes="secondary" IsVisible="False" />
+                    </StackPanel>
+                </Border>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem x:Name="InstagramTab" Header="Instagram">
+                <Border Classes="card" Margin="0,8,0,0">
+                    <Grid x:Name="InstagramGrid" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,0">
+                        <TextBlock x:Name="InstagramHintText" TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                   Classes="secondary" Margin="0,0,0,12" />
+                        <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto">
+                            <TextBox x:Name="InstagramUrlBox" />
+                            <Button x:Name="InstagramFetchButton" Grid.Column="1" Content="Fetch" Classes="secondary" Margin="10,0,0,0" Click="InstagramFetchButton_Click" />
+                            <Button x:Name="InstagramDownloadButton" Grid.Column="2" Content="Download" Classes="primary" Margin="10,0,0,0" Click="InstagramDownloadButton_Click" />
+                        </Grid>
+                        <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
+                            <TextBlock x:Name="InstagramBrowserLabel" Text="Browser for login" VerticalAlignment="Center"
+                                       Classes="secondary" Margin="0,0,8,0" />
+                            <ComboBox x:Name="InstagramBrowserCombo" MinWidth="160" SelectionChanged="InstagramBrowserCombo_SelectionChanged">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DisplayName}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <Button x:Name="InstagramLoginButton" Content="Open Instagram login" Classes="secondary"
+                                    Margin="12,0,0,0" Click="InstagramLoginButton_Click" />
+                        </WrapPanel>
+                        <WrapPanel Grid.Row="3" Margin="0,12,0,0">
+                            <Button x:Name="InstagramImportCookiesButton" Content="Add cookies..." Classes="secondary"
+                                    Click="InstagramImportCookiesButton_Click" />
+                            <Button x:Name="InstagramSyncCookiesButton" Content="Sync from browser" Classes="secondary"
+                                    Margin="10,0,0,0" Click="InstagramSyncCookiesButton_Click" />
+                            <Button x:Name="InstagramClearCookiesButton" Content="Clear cookies" Classes="secondary"
+                                    Margin="10,0,0,0" Click="InstagramClearCookiesButton_Click" />
+                            <TextBlock x:Name="InstagramCookiesStatusText" VerticalAlignment="Center" TextWrapping="Wrap"
+                                       Classes="secondary" Margin="12,8,0,0" />
+                        </WrapPanel>
+                        <Grid Grid.Row="4" Margin="0,12,0,0" ColumnDefinitions="Auto,*,Auto">
+                            <TextBlock x:Name="InstagramSavePathLabel" Text="Save to" VerticalAlignment="Center"
+                                       Classes="secondary" Margin="0,0,8,0" />
+                            <TextBox x:Name="InstagramSavePathBox" Grid.Column="1" TextChanged="InstagramSavePathBox_TextChanged" />
+                            <Button x:Name="InstagramBrowseSavePathButton" Grid.Column="2" Content="..." Margin="8,0,0,0"
+                                    Classes="secondary" Padding="12,10" Click="InstagramBrowseSavePath_Click" />
+                        </Grid>
+                        <TextBlock x:Name="InstagramPreviewText" Grid.Row="5" Margin="0,12,0,0" TextWrapping="Wrap"
+                                   Classes="secondary" IsVisible="False" />
+                        <Border x:Name="InstagramBrowsePanel" Grid.Row="6" Margin="0,12,0,0" IsVisible="False"
+                                Classes="elevated">
+                            <Grid RowDefinitions="Auto,*">
+                                <WrapPanel Margin="0,0,0,10">
+                                    <Button x:Name="InstagramDownloadSelectedButton" Content="Download selected" Classes="primary" Click="InstagramDownloadSelectedButton_Click" />
+                                    <Button x:Name="InstagramSelectAllButton" Content="Select all" Classes="secondary" Margin="10,0,0,0" Click="InstagramSelectAllButton_Click" />
+                                    <Button x:Name="InstagramExpandAllButton" Content="Expand all" Classes="secondary" Margin="10,0,0,0" Click="InstagramExpandAllButton_Click" />
+                                    <Button x:Name="InstagramCollapseAllButton" Content="Collapse all" Classes="secondary" Margin="10,0,0,0" Click="InstagramCollapseAllButton_Click" />
+                                    <Button x:Name="InstagramClearBrowseButton" Content="Clear list" Classes="secondary" Margin="10,0,0,0" Click="InstagramClearBrowseButton_Click" />
+                                </WrapPanel>
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MinHeight="120">
+                                    <StackPanel x:Name="InstagramSectionsPanel" />
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <TabItem x:Name="FileDownloadTab" Header="Files">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <Border Classes="card" Margin="0,8,0,0" VerticalAlignment="Top">
+                    <StackPanel Spacing="12">
+                        <TextBlock x:Name="FileDownloadHintText" TextWrapping="Wrap" FontSize="13" LineHeight="20" Classes="secondary" />
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBox x:Name="FileDownloadUrlBox" />
+                            <Button x:Name="FileDownloadButton" Grid.Column="1" Content="Download"
+                                    Classes="primary" Margin="10,0,0,0" Click="FileDownloadButton_Click" />
+                            <Button x:Name="BatchDownloadButton" Grid.Column="2" Content="Batch download…"
+                                    Classes="secondary" Margin="10,0,0,0" Click="BatchDownloadButton_Click" />
+                        </Grid>
+                        <Grid ColumnDefinitions="Auto,*">
+                            <TextBlock x:Name="FileDownloadNameLabel" Text="File name" VerticalAlignment="Center" Classes="secondary" Margin="0,0,8,0" />
+                            <TextBox x:Name="FileDownloadNameBox" Grid.Column="1" />
+                        </Grid>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="FileDownloadConnectionsLabel" Text="Connections" VerticalAlignment="Center" Classes="secondary" Margin="0,0,8,0" />
+                            <ComboBox x:Name="FileDownloadConnectionsCombo" MinWidth="80" SelectedIndex="1">
+                                <ComboBoxItem Content="4" />
+                                <ComboBoxItem Content="8" />
+                                <ComboBoxItem Content="12" />
+                                <ComboBoxItem Content="16" />
+                            </ComboBox>
+                        </StackPanel>
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <TextBlock x:Name="FileDownloadSavePathLabel" Text="Save to" VerticalAlignment="Center" Classes="secondary" Margin="0,0,8,0" />
+                            <TextBox x:Name="FileDownloadSavePathBox" Grid.Column="1" />
+                            <Button x:Name="FileDownloadBrowseSavePathButton" Grid.Column="2" Content="..." Margin="8,0,0,0"
+                                    Classes="secondary" Padding="12,10" Click="FileDownloadBrowseSavePath_Click" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem x:Name="ConvertTab" Header="Convert">
+                <TabControl x:Name="ConvertSubTabs" Classes="nested" Margin="0,8,0,0">
+                    <TabItem x:Name="VideoConvertSubTab" Header="Video Convert">
+                        <views:VideoConvertorView x:Name="VideoConvertorPanel" />
+                    </TabItem>
+                    <TabItem x:Name="ImageConvertSubTab" Header="Image Convert">
+                        <views:ImageConvertorView x:Name="ImageConvertorPanel" />
+                    </TabItem>
+                    <TabItem x:Name="AudioConvertSubTab" Header="Audio Convert">
+                        <views:AudioConvertorView x:Name="AudioConvertorPanel" />
+                    </TabItem>
+                    <TabItem x:Name="SpeechConvertSubTab" Header="Speech">
+                        <views:SpeechConvertorView x:Name="SpeechConvertorPanel" />
+                    </TabItem>
+                </TabControl>
+            </TabItem>
+        </TabControl>
+
+        <!-- Queue -->
+        <Expander x:Name="DownloadQueueExpander" Grid.Row="2" IsExpanded="False"
+                  Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                  BorderThickness="1" Padding="12" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+            <Expander.Header>
+                <TextBlock x:Name="DownloadQueueHeader" Text="Downloads" FontWeight="SemiBold" />
+            </Expander.Header>
+            <Grid MinHeight="120" RowDefinitions="Auto,*">
+                <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock x:Name="FinishActionLabel" Text="When all downloads finish:" Classes="secondary"
+                                   VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <ComboBox x:Name="FinishActionCombo" MinWidth="150" Margin="0,0,16,0"
+                                  SelectionChanged="FinishActionCombo_SelectionChanged" />
+                        <TextBlock x:Name="SchedulerStatusText" Classes="secondary" VerticalAlignment="Center"
+                                   Margin="0,0,8,0" IsVisible="False" />
+                        <Button x:Name="StartScheduledNowButton" Content="Start now" Classes="secondary small"
+                                IsVisible="False" Click="StartScheduledNowButton_Click" />
+                    </WrapPanel>
+                    <Button x:Name="ClearListButton" Grid.Column="1" Content="Clear list"
+                            Classes="secondary small" VerticalAlignment="Center"
+                            IsVisible="False" Click="ClearListButton_Click" />
+                </Grid>
+                <Grid Grid.Row="1">
+                    <TextBlock x:Name="EmptyText" Text="No downloads yet. Paste a URL to get started."
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Classes="secondary" FontSize="15" />
+                    <ListBox x:Name="DownloadList" Background="Transparent" BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.Styles>
+                            <Style Selector="ListBoxItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Background" Value="Transparent" />
+                            </Style>
+                            <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+                                <Setter Property="Background" Value="Transparent" />
+                            </Style>
+                            <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                <Setter Property="Background" Value="Transparent" />
+                            </Style>
+                        </ListBox.Styles>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource SurfaceElevatedBrush}" CornerRadius="12" Padding="14" Margin="0,0,0,10">
+                                    <Grid RowDefinitions="Auto,Auto,Auto,Auto">
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Row="1" Text="{Binding StatusText}" Classes="secondary" Margin="0,4,0,8" TextWrapping="Wrap" />
+                                        <Panel Grid.Row="2" Margin="0,0,0,8">
+                                            <ProgressBar Value="{Binding Progress}" Maximum="100" IsVisible="{Binding !HasSegments}" />
+                                            <!-- IDM-style bar: one block per connection, filling in real time -->
+                                            <controls:SegmentedProgressBar Height="8" CornerRadius="4"
+                                                Segments="{Binding Segments}" IsVisible="{Binding HasSegments}"
+                                                TrackBrush="{DynamicResource BorderBrush}" FillBrush="{DynamicResource AccentBrush}" />
+                                        </Panel>
+                                        <Grid Grid.Row="3" ColumnDefinitions="*,Auto">
+                                            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center" IsVisible="{Binding !IsCompleted}">
+                                                <TextBlock Text="{Binding ProgressText}" Classes="secondary" Margin="0,0,16,0" />
+                                                <TextBlock Text="{Binding SizeText}" Classes="secondary" Margin="0,0,16,0" />
+                                                <TextBlock Text="{Binding SpeedText}" Classes="secondary" Margin="0,0,16,0" />
+                                                <TextBlock Text="{Binding EtaText}" Classes="secondary" />
+                                            </WrapPanel>
+                                            <WrapPanel Grid.Column="1" Orientation="Horizontal">
+                                                <Button Classes="secondary small" Margin="0,0,8,0" Tag="{Binding Id}"
+                                                        Content="{DynamicResource CopyDetailsLabel}"
+                                                        IsVisible="{Binding CanCopyDiagnostics}" Click="CopyDownloadDetails_Click" />
+                                                <Button Classes="secondary small" Margin="0,0,8,0" Tag="{Binding Id}"
+                                                        Content="{DynamicResource RemoveLabel}" Click="RemoveDownload_Click" />
+                                                <Button Classes="secondary small" Margin="0,0,8,0" Tag="{Binding Id}"
+                                                        Content="{DynamicResource RetryLabel}"
+                                                        IsVisible="{Binding CanRetry}" Click="RetryDownload_Click" />
+                                                <Button Classes="secondary small" Margin="0,0,8,0" Tag="{Binding Id}"
+                                                        Content="{DynamicResource PauseLabel}"
+                                                        IsVisible="{Binding CanPause}" Click="PauseDownload_Click" />
+                                                <Button Classes="secondary small" Margin="0,0,8,0" Tag="{Binding Id}"
+                                                        Content="{DynamicResource ResumeLabel}"
+                                                        IsVisible="{Binding CanResume}" Click="ResumeDownload_Click" />
+                                                <Button Classes="secondary small" Margin="0,0,8,0" Tag="{Binding Id}"
+                                                        Content="{DynamicResource CancelLabel}"
+                                                        IsVisible="{Binding CanCancel}" Click="CancelDownload_Click" />
+                                                <Button Classes="secondary small" Margin="0,0,8,0" Tag="{Binding Sha256}"
+                                                        Content="{DynamicResource CopySha256Label}"
+                                                        ToolTip.Tip="{Binding Sha256}"
+                                                        IsVisible="{Binding Sha256, Converter={x:Static StringConverters.IsNotNullOrEmpty}, FallbackValue=False}"
+                                                        Click="CopySha256_Click" />
+                                                <Button Classes="secondary small" Margin="0,0,8,0" Tag="{Binding Id}"
+                                                        Content="{DynamicResource OpenFolderLabel}"
+                                                        IsVisible="{Binding CanOpenFolder}" Click="OpenFolder_Click" />
+                                                <Button Classes="primary small" Tag="{Binding Id}"
+                                                        Content="{DynamicResource PlayLabel}"
+                                                        IsVisible="{Binding IsCompleted}" IsEnabled="{Binding CanPlay}" Click="PlayVideo_Click" />
+                                            </WrapPanel>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Grid>
+        </Expander>
+
+        <!-- Status -->
+        <Grid Grid.Row="3" Margin="0,14,0,0" ColumnDefinitions="*,Auto">
+            <TextBlock x:Name="StatusText" Classes="secondary" FontSize="12"
+                       TextWrapping="Wrap" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0" Spacing="2">
+                <StackPanel.Styles>
+                    <Style Selector="HyperlinkButton">
+                        <Setter Property="Padding" Value="2,0" />
+                        <Setter Property="FontSize" Value="12" />
+                    </Style>
+                </StackPanel.Styles>
+                <TextBlock Text="© 2026 " Classes="secondary" FontSize="12" VerticalAlignment="Center" />
+                <HyperlinkButton Content="mothannakh" Tag="https://github.com/mothannakhzaleh/DownloadMaster" Click="Link_Click" />
+                <TextBlock Text=" · " Classes="secondary" FontSize="12" VerticalAlignment="Center" />
+                <HyperlinkButton Content="satisfy.live" Tag="https://satisfy.live/" Click="Link_Click" />
+                <TextBlock Text=" · " Classes="secondary" FontSize="12" VerticalAlignment="Center" />
+                <HyperlinkButton Content="YouTube" Tag="https://www.youtube.com/@ToPSourceDevelopment" Click="Link_Click" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

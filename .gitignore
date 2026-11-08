@@ -89,19 +89,24 @@ secrets.json
 appsettings.Development.json
 **/launchSettings.json
 
-# Bundled tool binaries (large; restore with setup-tools.bat)
+# Bundled tool binaries (large; restore with setup-tools.bat / setup-tools.sh)
 DownloadMaster/tools/yt-dlp.exe
 DownloadMaster/tools/ffmpeg/ffmpeg.exe
 DownloadMaster/tools/ffmpeg/ffprobe.exe
 **/tools/yt-dlp.exe
 **/tools/ffmpeg/ffmpeg.exe
 **/tools/ffmpeg/ffprobe.exe
+# Linux / macOS tool binaries (no .exe suffix)
+**/tools/yt-dlp
+**/tools/yt-dlp_*
+**/tools/ffmpeg/ffmpeg
+**/tools/ffmpeg/ffprobe
 
 # Optional: keep tools folder structure
 !DownloadMaster/tools/README.txt
 !DownloadMaster/tools/ffmpeg/.gitkeep
 
-# Debug configurations (project uses Release x64 only)
+# Debug configurations (scripts build Release)
 **/bin/Debug/
 **/obj/Debug/
 **/bin/x64/Debug/
@@ -121,3 +126,19 @@ agent-transcripts/
 # Backup files
 *.orig
 *.rej
+
+# macOS build / packaging junk
+*.app/
+*.dmg
+._*
+.Spotlight-V100
+.Trashes
+
+# Release packaging scratch (release.yml)
+dist/
+
+# Local test runs (DOWNLOADMASTER_DATA_DIR sandbox, test downloads)
+test-output/
+
+# Ready-to-run local builds (publish-standalone.bat / publish.sh)
+ship/

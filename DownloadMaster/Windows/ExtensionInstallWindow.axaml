@@ -1,0 +1,67 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DownloadMaster.ExtensionInstallWindow"
+        Title="Browser extension"
+        Icon="/Assets/app.ico"
+        Width="620"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen">
+    <StackPanel Margin="24" Spacing="14">
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <Image Source="/Assets/app-icon.png" Width="40" Height="40" />
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock x:Name="HeaderText" Text="Install the browser extension" Classes="h2" FontSize="18" />
+                <TextBlock x:Name="IntroText" Classes="secondary" TextWrapping="Wrap" MaxWidth="520"
+                           Text="Catches browser downloads and adds a Download button to videos — with your cookies, so logged-in downloads work." />
+            </StackPanel>
+        </StackPanel>
+
+        <Border Classes="elevated">
+            <StackPanel Spacing="6">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Ellipse x:Name="StatusDot" Width="10" Height="10" Fill="{DynamicResource ErrorBrush}" VerticalAlignment="Center" />
+                    <TextBlock x:Name="StatusText" Text="Not connected yet" FontWeight="SemiBold" />
+                </StackPanel>
+                <TextBlock x:Name="StatusHint" Classes="secondary" FontSize="12" TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto">
+            <TextBlock Grid.Row="0" Text="1" Classes="h2" Margin="0,8,14,0" />
+            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="8" Margin="0,8,0,10">
+                <TextBlock x:Name="Step1Text" Text="Open your browser's extensions page" FontWeight="SemiBold" />
+                <WrapPanel>
+                    <ComboBox x:Name="BrowserCombo" MinWidth="170" Margin="0,0,10,0">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DisplayName}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button x:Name="OpenPageButton" Content="Open extensions page" Classes="primary" Click="OpenPage_Click" />
+                </WrapPanel>
+            </StackPanel>
+
+            <TextBlock Grid.Row="1" Text="2" Classes="h2" Margin="0,8,14,0" />
+            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="Step2Text" TextWrapping="Wrap" Margin="0,8,0,10"
+                       Text="Turn on Developer mode (switch in the top-right corner of that page)." FontWeight="SemiBold" />
+
+            <TextBlock Grid.Row="2" Text="3" Classes="h2" Margin="0,8,14,0" />
+            <StackPanel Grid.Row="2" Grid.Column="1" Spacing="8" Margin="0,8,0,0">
+                <TextBlock x:Name="Step3Text" TextWrapping="Wrap" FontWeight="SemiBold"
+                           Text="Click &quot;Load unpacked&quot; and choose this folder:" />
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                    <TextBox x:Name="FolderBox" IsReadOnly="True" FontSize="12" />
+                    <Button Grid.Column="1" x:Name="CopyPathButton" Content="Copy path" Classes="secondary" Margin="8,0,0,0" Click="CopyPath_Click" />
+                    <Button Grid.Column="2" x:Name="ShowFolderButton" Content="Show folder" Classes="secondary" Margin="8,0,0,0" Click="ShowFolder_Click" />
+                </Grid>
+            </StackPanel>
+        </Grid>
+
+        <TextBlock x:Name="FootText" Classes="secondary" FontSize="12" TextWrapping="Wrap"
+                   Text="The extension only talks to DownloadMaster on this computer (127.0.0.1). If the app is closed, the browser downloads as usual." />
+
+        <Button x:Name="CloseButton" Content="Close" Classes="secondary" HorizontalAlignment="Right" IsCancel="True" Click="Close_Click" />
+    </StackPanel>
+</Window>

@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DownloadMaster.InstagramCookiesWindow"
+        Title="Instagram cookies"
+        Icon="/Assets/app.ico"
+        Height="520" Width="640"
+        MinHeight="460" MinWidth="560"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="24" RowDefinitions="Auto,*,Auto">
+        <TextBlock x:Name="HintText" TextWrapping="Wrap" FontSize="13" LineHeight="20" Classes="secondary" Margin="0,0,0,12" />
+
+        <TextBox x:Name="PasteBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap"
+                 MinHeight="180" VerticalContentAlignment="Top"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto" />
+
+        <WrapPanel Grid.Row="2" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button x:Name="ImportFileButton" Content="Import from file..." Classes="secondary"
+                    Margin="0,0,10,0" Click="ImportFileButton_Click" />
+            <Button x:Name="CancelButton" Content="Cancel" Classes="secondary" IsCancel="True"
+                    Margin="0,0,10,0" Click="CancelButton_Click" />
+            <Button x:Name="SaveButton" Content="Save and use" Classes="primary"
+                    Padding="20,10" Click="SaveButton_Click" />
+        </WrapPanel>
+    </Grid>
+</Window>
