@@ -4,15 +4,15 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROJECT="$ROOT/DownloadMaster/DownloadMaster.csproj"
-OUT="$ROOT/DownloadMaster/bin/Release/net10.0"
+PROJECT="$ROOT/src/DownloadMaster/DownloadMaster.csproj"
+OUT="$ROOT/src/DownloadMaster/bin/Release/net10.0"
 
 if ! command -v dotnet >/dev/null 2>&1; then
     echo "ERROR: .NET SDK not found. Install the .NET 10 SDK: https://dotnet.microsoft.com/download/dotnet/10.0" >&2
     exit 1
 fi
 
-if [ ! -e "$ROOT/DownloadMaster/tools/yt-dlp" ] && ! command -v yt-dlp >/dev/null 2>&1; then
+if [ ! -e "$ROOT/src/DownloadMaster/tools/yt-dlp" ] && ! command -v yt-dlp >/dev/null 2>&1; then
     echo "NOTE: yt-dlp not found. Run scripts/setup-tools.sh (or install yt-dlp with your package manager)."
 fi
 

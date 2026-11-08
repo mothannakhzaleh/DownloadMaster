@@ -90,9 +90,9 @@ appsettings.Development.json
 **/launchSettings.json
 
 # Bundled tool binaries (large; restore with setup-tools.bat / setup-tools.sh)
-DownloadMaster/tools/yt-dlp.exe
-DownloadMaster/tools/ffmpeg/ffmpeg.exe
-DownloadMaster/tools/ffmpeg/ffprobe.exe
+src/DownloadMaster/tools/yt-dlp.exe
+src/DownloadMaster/tools/ffmpeg/ffmpeg.exe
+src/DownloadMaster/tools/ffmpeg/ffprobe.exe
 **/tools/yt-dlp.exe
 **/tools/ffmpeg/ffmpeg.exe
 **/tools/ffmpeg/ffprobe.exe
@@ -103,8 +103,8 @@ DownloadMaster/tools/ffmpeg/ffprobe.exe
 **/tools/ffmpeg/ffprobe
 
 # Optional: keep tools folder structure
-!DownloadMaster/tools/README.txt
-!DownloadMaster/tools/ffmpeg/.gitkeep
+!src/DownloadMaster/tools/README.txt
+!src/DownloadMaster/tools/ffmpeg/.gitkeep
 
 # Debug configurations (scripts build Release)
 **/bin/Debug/

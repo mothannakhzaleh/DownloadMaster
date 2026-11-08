@@ -5,13 +5,13 @@
 #   RID defaults to the current OS/arch: linux-x64, linux-arm64, osx-arm64, osx-x64.
 #   Other examples: win-x64 (cross-publish from Linux/macOS works too).
 #
-# Output: ship/<RID>/  (DownloadMaster + tools/ copied from DownloadMaster/tools)
+# Output: ship/<RID>/  (DownloadMaster + tools/ copied from src/DownloadMaster/tools)
 # macOS .app bundles and release archives are built by .github/workflows/release.yml.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROJECT="$ROOT/DownloadMaster/DownloadMaster.csproj"
-TOOLS="$ROOT/DownloadMaster/tools"
+PROJECT="$ROOT/src/DownloadMaster/DownloadMaster.csproj"
+TOOLS="$ROOT/src/DownloadMaster/tools"
 
 detect_rid() {
     local os arch
@@ -47,7 +47,7 @@ dotnet publish "$PROJECT" -c Release -r "$RID" --self-contained true \
     -p:DebugType=None \
     -o "$OUTPUT"
 
-# Bundled tools (setup-tools.sh / setup-tools.bat put them in DownloadMaster/tools).
+# Bundled tools (setup-tools.sh / setup-tools.bat put them in src/DownloadMaster/tools).
 mkdir -p "$OUTPUT/tools/ffmpeg"
 rm -f "$OUTPUT/tools/ffmpeg/.gitkeep"
 case "$RID" in
@@ -69,6 +69,6 @@ case "$RID" in win-*) ;; *) chmod +x "$OUTPUT/DownloadMaster" ;; esac
 echo
 echo "Publish complete: $OUTPUT"
 if [ -n "$missing" ]; then
-    echo "Not bundled (missing in DownloadMaster/tools):$missing"
+    echo "Not bundled (missing in src/DownloadMaster/tools):$missing"
     echo "The app falls back to tools on PATH / Homebrew. Run scripts/setup-tools.sh to bundle them."
 fi

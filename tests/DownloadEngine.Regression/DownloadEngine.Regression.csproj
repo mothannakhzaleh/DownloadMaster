@@ -22,18 +22,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\DownloadMaster\Models\DownloadItem.cs" Link="Linked\DownloadItem.cs" />
-    <Compile Include="..\..\DownloadMaster\Models\Enums.cs" Link="Linked\Enums.cs" />
-    <Compile Include="..\..\DownloadMaster\Models\FileDownloadState.cs" Link="Linked\FileDownloadState.cs" />
-    <Compile Include="..\..\DownloadMaster\Models\SegmentProgress.cs" Link="Linked\SegmentProgress.cs" />
-    <Compile Include="..\..\DownloadMaster\Services\AppPaths.cs" Link="Linked\AppPaths.cs" />
-    <Compile Include="..\..\DownloadMaster\Services\Downloads\DirectDownloadLinkResolver.cs" Link="Linked\DirectDownloadLinkResolver.cs" />
-    <Compile Include="..\..\DownloadMaster\Services\Downloads\DownloadAddressRefresh.cs" Link="Linked\DownloadAddressRefresh.cs" />
-    <Compile Include="..\..\DownloadMaster\Services\Downloads\DownloadProgressReport.cs" Link="Linked\DownloadProgressReport.cs" />
-    <Compile Include="..\..\DownloadMaster\Services\Downloads\FileChecksumService.cs" Link="Linked\FileChecksumService.cs" />
-    <Compile Include="..\..\DownloadMaster\Services\Downloads\FileDownloadStateStore.cs" Link="Linked\FileDownloadStateStore.cs" />
-    <Compile Include="..\..\DownloadMaster\Services\FormatHelpers.cs" Link="Linked\FormatHelpers.cs" />
-    <Compile Include="..\..\DownloadMaster\Services\Downloads\HttpFileDownloadService.cs" Link="Linked\HttpFileDownloadService.cs" />
-    <Compile Include="..\..\DownloadMaster\Services\Downloads\SpeedLimiter.cs" Link="Linked\SpeedLimiter.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Models\DownloadItem.cs" Link="Linked\DownloadItem.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Models\Enums.cs" Link="Linked\Enums.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Models\FileDownloadState.cs" Link="Linked\FileDownloadState.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Models\SegmentProgress.cs" Link="Linked\SegmentProgress.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\AppPaths.cs" Link="Linked\AppPaths.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Downloads\DirectDownloadLinkResolver.cs" Link="Linked\DirectDownloadLinkResolver.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Downloads\DownloadAddressRefresh.cs" Link="Linked\DownloadAddressRefresh.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Downloads\DownloadProgressReport.cs" Link="Linked\DownloadProgressReport.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Downloads\FileChecksumService.cs" Link="Linked\FileChecksumService.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Downloads\FileDownloadStateStore.cs" Link="Linked\FileDownloadStateStore.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\FormatHelpers.cs" Link="Linked\FormatHelpers.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Downloads\HttpFileDownloadService.cs" Link="Linked\HttpFileDownloadService.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Downloads\SpeedLimiter.cs" Link="Linked\SpeedLimiter.cs" />
   </ItemGroup>
 </Project>

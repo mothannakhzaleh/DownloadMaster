@@ -26,7 +26,7 @@ env:
   DOTNET_NOLOGO: 'true'
   DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
-  PROJECT: DownloadMaster/DownloadMaster.csproj
+  PROJECT: src/DownloadMaster/DownloadMaster.csproj
   YTDLP_BASE: https://github.com/yt-dlp/yt-dlp/releases/latest/download
   BTBN_BASE: https://github.com/BtbN/FFmpeg-Builds/releases/download/latest
 
@@ -220,7 +220,7 @@ jobs:
           mkdir -p "$stage" dist
           cp -R out/publish/. "$stage/"
           cp LICENSE THIRD_PARTY_LICENSES.md "$stage/"
-          cp DownloadMaster/Assets/app-icon.png "$stage/downloadmaster.png"
+          cp src/DownloadMaster/Assets/app-icon.png "$stage/downloadmaster.png"
           chmod +x "$stage/DownloadMaster" "$stage/tools/yt-dlp"
           chmod +x "$stage/tools/ffmpeg/ffmpeg" "$stage/tools/ffmpeg/ffprobe"
           tar -czf "dist/$PKG_NAME.tar.gz" -C out/stage "$PKG_NAME"
@@ -245,7 +245,7 @@ jobs:
 
           # Icon: center-crop the PNG to a square, then build an .icns.
           make_icon() {
-            local src=DownloadMaster/Assets/app-icon.png
+            local src=src/DownloadMaster/Assets/app-icon.png
             local work=out/icon iconset=out/icon/DownloadMaster.iconset
             mkdir -p "$iconset"
             local w h s
@@ -360,7 +360,7 @@ jobs:
         run: |
           stage=out/browser-extension
           mkdir -p "$stage"
-          cp -R browser-extension/. "$stage/"
+          cp -R src/browser-extension/. "$stage/"
           rm -f "$stage/README.md"
           # Chrome only accepts numeric versions (e.g. 2.0.0 from v2.0.0-beta.1).
           ext_version="$(printf '%s' "$VERSION" | sed -E 's/^([0-9]+(\.[0-9]+){0,3}).*/\1/')"

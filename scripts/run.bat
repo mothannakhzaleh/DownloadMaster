@@ -11,7 +11,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-set "EXE=%ROOT%\DownloadMaster\bin\Release\net10.0\DownloadMaster.exe"
+set "EXE=%ROOT%\src\DownloadMaster\bin\Release\net10.0\DownloadMaster.exe"
 if not exist "%EXE%" (
     echo ERROR: Built exe not found: %EXE%
     pause

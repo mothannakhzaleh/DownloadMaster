@@ -15,16 +15,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Keep in sync with DownloadMaster/DownloadMaster.csproj. -->
+    <!-- Keep in sync with src/DownloadMaster/DownloadMaster.csproj. -->
     <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="15.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\DownloadMaster\Models\ImageSettings.cs" Link="Linked\ImageSettings.cs" />
-    <Compile Include="..\..\DownloadMaster\Models\ImageExtensionFilterSettings.cs" Link="Linked\ImageExtensionFilterSettings.cs" />
-    <Compile Include="..\..\DownloadMaster\Services\Convert\ImageConversionService.cs" Link="Linked\ImageConversionService.cs" />
-    <Compile Include="..\..\DownloadMaster\Services\Convert\BmpPaletteNormalizer.cs" Link="Linked\BmpPaletteNormalizer.cs" />
-    <Compile Include="..\..\DownloadMaster\Services\Convert\PngReadNormalizer.cs" Link="Linked\PngReadNormalizer.cs" />
-    <Compile Include="..\..\DownloadMaster\Services\FormatHelpers.cs" Link="Linked\FormatHelpers.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Models\ImageSettings.cs" Link="Linked\ImageSettings.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Models\ImageExtensionFilterSettings.cs" Link="Linked\ImageExtensionFilterSettings.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Convert\ImageConversionService.cs" Link="Linked\ImageConversionService.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Convert\BmpPaletteNormalizer.cs" Link="Linked\BmpPaletteNormalizer.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Convert\PngReadNormalizer.cs" Link="Linked\PngReadNormalizer.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\FormatHelpers.cs" Link="Linked\FormatHelpers.cs" />
   </ItemGroup>
 </Project>

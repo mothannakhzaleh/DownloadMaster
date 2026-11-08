@@ -14,7 +14,7 @@ cd /d "%ROOT%"
 
 set "ARTIFACTS=artifacts"
 set "PUBLISH=ship\win-x64"
-set "CSPROJ=DownloadMaster\DownloadMaster.csproj"
+set "CSPROJ=src\DownloadMaster\DownloadMaster.csproj"
 set "NOTES_TEMPLATE=docs\release-notes-template.md"
 set "AUTO_YES=0"
 set "VERSION_OVERRIDE="

@@ -1,5 +1,5 @@
 <Solution>
-  <Project Path="DownloadMaster/DownloadMaster.csproj" />
+  <Project Path="src/DownloadMaster/DownloadMaster.csproj" />
   <Folder Name="/tests/">
     <Project Path="tests/DownloadEngine.Regression/DownloadEngine.Regression.csproj" />
     <Project Path="tests/ImageConversion.Regression/ImageConversion.Regression.csproj" />

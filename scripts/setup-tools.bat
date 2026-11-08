@@ -1,9 +1,9 @@
 @echo off
 setlocal
-REM Downloads yt-dlp + FFmpeg into DownloadMaster\tools (bundled with every build).
+REM Downloads yt-dlp + FFmpeg into src\DownloadMaster\tools (bundled with every build).
 for %%I in ("%~dp0..") do set "ROOT=%%~fI"
 cd /d "%ROOT%"
-set "TOOLS=DownloadMaster\tools"
+set "TOOLS=src\DownloadMaster\tools"
 set "FFMPEG_DST=%TOOLS%\ffmpeg"
 set "FFMPEG_ZIP_URL=https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
 

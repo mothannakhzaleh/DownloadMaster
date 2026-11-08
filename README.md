@@ -49,7 +49,7 @@ Screenshots are generated from the real app by [`scripts/screenshots.ps1`](scrip
 - **Download button on videos** — hover a video to send the page (yt-dlp, best quality) or a detected **HLS / DASH / MP4** stream
 - **Refresh download address** — if a link expired, start it again in the browser and the app continues the old `.part` file
 - Falls back to the browser's own download when the app isn't running
-- **Install from the app**: tray menu or Settings → *Browser extension…* (see [browser-extension/README.md](browser-extension/README.md))
+- **Install from the app**: tray menu or Settings → *Browser extension…* (see [src/browser-extension/README.md](src/browser-extension/README.md))
 
 ### Files (IDM-style engine)
 - Direct http/https links and public **Google Drive** links
@@ -144,8 +144,8 @@ All scripts live in [`scripts/`](scripts/) (`.bat` for Windows, `.sh` for Linux 
 
 | Script | Purpose |
 |--------|---------|
-| `setup-tools` | Download yt-dlp + FFmpeg into `DownloadMaster/tools/` (once) |
-| `build` | Build Release → `DownloadMaster/bin/Release/net10.0/` |
+| `setup-tools` | Download yt-dlp + FFmpeg into `src/DownloadMaster/tools/` (once) |
+| `build` | Build Release → `src/DownloadMaster/bin/Release/net10.0/` |
 | `run` | Build and start the app (`run.bat --sandbox` keeps settings and downloads in `test-output/`) |
 | `test` | Run every regression test project in `tests/` (writes only to `test-output/`) |
 | `publish` | **Ready-to-run build in `ship/<rid>/`** — single exe + `tools/` + `browser-extension/` |
@@ -222,8 +222,9 @@ committed) and the installed copy of the browser extension. Set `DOWNLOADMASTER_
 ## Repository layout
 
 ```
-├── DownloadMaster/           Avalonia app (.NET 10) — see docs/STRUCTURE.md
-├── browser-extension/        Chrome / Edge MV3 extension
+├── src/
+│   ├── DownloadMaster/       Avalonia app (.NET 10) — see docs/STRUCTURE.md
+│   └── browser-extension/    Chrome / Edge MV3 extension
 ├── tests/                    ImageConversion.Regression, DownloadEngine.Regression
 ├── scripts/                  build / run / test / publish / setup-tools / release (.bat + .sh)
 ├── docs/

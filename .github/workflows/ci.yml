@@ -28,7 +28,7 @@ env:
   DOTNET_NOLOGO: 'true'
   DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
-  PROJECT: DownloadMaster/DownloadMaster.csproj
+  PROJECT: src/DownloadMaster/DownloadMaster.csproj
 
 jobs:
   build:
@@ -83,10 +83,10 @@ jobs:
       - name: Check browser extension (syntax + manifest)
         if: runner.os == 'Linux'
         run: |
-          for f in browser-extension/background.js browser-extension/content.js browser-extension/popup/popup.js; do
+          for f in src/browser-extension/background.js src/browser-extension/content.js src/browser-extension/popup/popup.js; do
             node --check "$f"
           done
-          python3 -c "import json; m = json.load(open('browser-extension/manifest.json')); assert m['manifest_version'] == 3"
+          python3 -c "import json; m = json.load(open('src/browser-extension/manifest.json')); assert m['manifest_version'] == 3"
 
       - name: Publish framework-dependent build
         run: dotnet publish "$PROJECT" -c Release --no-build -o "artifacts/ci/DownloadMaster-${{ matrix.name }}"

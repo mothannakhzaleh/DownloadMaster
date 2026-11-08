@@ -13,11 +13,12 @@ VideoDownloader/
 ├── .github/workflows/
 │   ├── ci.yml                       # Build + tests on Windows / Linux / macOS, extension check
 │   └── release.yml                  # Tag v* → standalone packages + extension zip + GitHub Release
-├── DownloadMaster/                  # The app (see below)
-├── browser-extension/               # Chrome / Edge / Brave / Opera extension (Manifest V3)
-│   ├── manifest.json · background.js · content.js · overlay.css
-│   ├── popup/                       # Extension popup (status, toggles, streams in this tab)
-│   └── icons/
+├── src/
+│   ├── DownloadMaster/              # The app (see below)
+│   └── browser-extension/           # Chrome / Edge / Brave / Opera extension (Manifest V3)
+│       ├── manifest.json · background.js · content.js · overlay.css
+│       ├── popup/                   # Extension popup (status, toggles, streams in this tab)
+│       └── icons/
 ├── tests/
 │   ├── ImageConversion.Regression/  # 39 image conversion checks
 │   └── DownloadEngine.Regression/   # Multi-connection engine checks against a local range server
@@ -32,10 +33,10 @@ VideoDownloader/
 └── test-output/                     # Test runs and sandboxes (gitignored)
 ```
 
-## The app — `DownloadMaster/`
+## The app — `src/DownloadMaster/`
 
 ```
-DownloadMaster/
+src/DownloadMaster/
 ├── Program.cs                 # Entry point; hands off to an already running instance
 ├── App.axaml(.cs)             # Theme + styles, tray icon and menu, local bridge startup
 ├── MainWindow.axaml(.cs)      # Video / Instagram / Files / Convert tabs and the download queue
@@ -106,7 +107,7 @@ DownloadMaster/
 
 | Script | Steps |
 |--------|-------|
-| `scripts/setup-tools` | Download yt-dlp and FFmpeg into `DownloadMaster/tools/` |
+| `scripts/setup-tools` | Download yt-dlp and FFmpeg into `src/DownloadMaster/tools/` |
 | `scripts/build` | `dotnet build -c Release` |
 | `scripts/run` | Build, then start (`--sandbox` = data in `test-output/sandbox`) |
 | `scripts/test` | `dotnet run` every project in `tests/` with a sandbox data folder |

@@ -2,7 +2,7 @@
 # DownloadMaster - set up bundled tools on Linux / macOS.
 # Copyright (c) 2026 mothannakh - https://satisfy.live/
 #
-# Downloads into DownloadMaster/tools:
+# Downloads into src/DownloadMaster/tools:
 #   tools/yt-dlp                 (yt-dlp_linux / yt-dlp_linux_aarch64 / yt-dlp_macos)
 #   tools/ffmpeg/ffmpeg          (Linux: BtbN static build, macOS: martin-riedl.de static build)
 #   tools/ffmpeg/ffprobe
@@ -13,7 +13,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TOOLS="$ROOT/DownloadMaster/tools"
+TOOLS="$ROOT/src/DownloadMaster/tools"
 FFMPEG_DST="$TOOLS/ffmpeg"
 YTDLP_BASE="https://github.com/yt-dlp/yt-dlp/releases/latest/download"
 BTBN_BASE="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest"

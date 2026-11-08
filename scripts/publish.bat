@@ -10,8 +10,8 @@ for %%I in ("%~dp0..") do set "ROOT=%%~fI"
 cd /d "%ROOT%"
 
 set "RID=win-x64"
-set "PROJECT=%ROOT%\DownloadMaster\DownloadMaster.csproj"
-set "TOOLS=%ROOT%\DownloadMaster\tools"
+set "PROJECT=%ROOT%\src\DownloadMaster\DownloadMaster.csproj"
+set "TOOLS=%ROOT%\src\DownloadMaster\tools"
 set "OUTPUT=%ROOT%\ship\%RID%"
 
 echo.
@@ -27,7 +27,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM --- Bundled tools (downloaded once into DownloadMaster\tools) ---
+REM --- Bundled tools (downloaded once into src\DownloadMaster\tools) ---
 set "NEED_TOOLS=0"
 if not exist "%TOOLS%\yt-dlp.exe" set "NEED_TOOLS=1"
 if not exist "%TOOLS%\ffmpeg\ffmpeg.exe" set "NEED_TOOLS=1"
