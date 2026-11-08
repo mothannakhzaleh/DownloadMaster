@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <!-- Keep in sync with DownloadMaster/DownloadMaster.csproj. -->
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.17.2" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="15.1.0" />
   </ItemGroup>
 
   <ItemGroup>

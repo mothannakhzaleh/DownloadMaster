@@ -27,7 +27,7 @@
     <!-- DataGrid is versioned separately from Avalonia core; 11.3.13 is the latest 11.x. -->
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.13" />
     <PackageReference Include="FFMpegCore" Version="5.1.0" />
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.17.2" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="15.1.0" />
     <!-- Windows voices only; guarded with OperatingSystem.IsWindows() at runtime. -->
     <PackageReference Include="System.Speech" Version="8.0.0" />
   </ItemGroup>

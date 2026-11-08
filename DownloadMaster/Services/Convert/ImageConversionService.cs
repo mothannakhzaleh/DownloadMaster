@@ -497,7 +497,7 @@ public sealed class ImageConversionService
         {
             case ImageColorDepthMode.RemoveAlpha:
                 image.BackgroundColor = MagickColors.Black;
-                image.Alpha(AlphaOption.Remove);
+                image.Alpha(AlphaAction.Remove);
                 break;
 
             case ImageColorDepthMode.Indexed8Bit:
@@ -512,7 +512,7 @@ public sealed class ImageConversionService
             case ImageColorDepthMode.Keep32BitRgba:
                 image.Depth = 8;
                 if (!image.HasAlpha)
-                    image.Alpha(AlphaOption.Opaque);
+                    image.Alpha(AlphaAction.Opaque);
                 break;
         }
     }
@@ -533,14 +533,14 @@ public sealed class ImageConversionService
         {
             image.Depth = 8;
             if (!image.HasAlpha)
-                image.Alpha(AlphaOption.Opaque);
+                image.Alpha(AlphaAction.Opaque);
 
             image.ColorType = ColorType.TrueColorAlpha;
             return;
         }
 
         image.BackgroundColor = MagickColors.Black;
-        image.Alpha(AlphaOption.Remove);
+        image.Alpha(AlphaAction.Remove);
         image.ColorType = ColorType.TrueColor;
         image.Depth = 8;
     }
@@ -572,7 +572,7 @@ public sealed class ImageConversionService
         ExpandIndexedToTrueColor(image);
 
         if (!image.HasAlpha)
-            image.Alpha(AlphaOption.Opaque);
+            image.Alpha(AlphaAction.Opaque);
 
         image.Depth = 8;
         image.ColorType = ColorType.TrueColorAlpha;
