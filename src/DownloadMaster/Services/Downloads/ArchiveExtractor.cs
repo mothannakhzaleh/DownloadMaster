@@ -466,10 +466,11 @@ public static partial class ArchiveExtractor
 
     private static async Task RunSevenZipAsync(string sevenZip, string archive, string target, CancellationToken ct)
     {
-        // x = keep folders, -y = yes to all, -bd = no progress meter, -- = the archive name is never a switch.
+        // x = keep folders, -y = yes to all, -bd = no progress meter, -p = empty password (never prompt;
+        // an encrypted archive fails with "Wrong password"), -- = the archive name is never a switch.
         var result = await ExternalToolRunner.RunAsync(
             sevenZip,
-            ["x", "-y", "-bd", "-o" + target, "--", archive],
+            ["x", "-y", "-bd", "-p", "-o" + target, "--", archive],
             TimeSpan.FromHours(6),
             ct).ConfigureAwait(false);
 
@@ -484,7 +485,7 @@ public static partial class ArchiveExtractor
     {
         // 7-Zip only removes the .xz layer (it would leave a .tar); stream that into the tar reader.
         using var process = System.Diagnostics.Process.Start(
-            ExternalToolRunner.CreateStartInfo(sevenZip, ["x", "-so", "-bd", "--", archive]))
+            ExternalToolRunner.CreateStartInfo(sevenZip, ["x", "-so", "-bd", "-p", "--", archive]))
             ?? throw new IOException("Could not start 7-Zip.");
         process.StandardInput.Close();
         var stderr = process.StandardError.ReadToEndAsync(ct);

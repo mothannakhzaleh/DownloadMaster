@@ -230,6 +230,11 @@ public sealed class DownloadManager
                 else
                     await _ytDlp.DownloadAsync(item, _settings.Current, progress, instagram: null, linked.Token);
             });
+
+            // Video / Instagram downloads get the antivirus scan too (archive extraction is for files only).
+            if (item.Status == DownloadStatus.Completed && _settings.Current.ScanDownloadsWithAntivirus
+                && !string.IsNullOrWhiteSpace(item.OutputPath) && File.Exists(item.OutputPath))
+                _ = Task.Run(() => ScanQuietlyAsync(item, item.OutputPath));
         }
         catch (OperationCanceledException)
         {
@@ -331,6 +336,18 @@ public sealed class DownloadManager
         catch (Exception ex)
         {
             item.AppendDiagnostic($"After-download step failed: {ex.Message}");
+        }
+    }
+
+    private static async Task ScanQuietlyAsync(DownloadItem item, string path)
+    {
+        try
+        {
+            await ScanAsync(item, path);
+        }
+        catch (Exception ex)
+        {
+            item.AppendDiagnostic($"After-download scan failed: {ex.Message}");
         }
     }
 
