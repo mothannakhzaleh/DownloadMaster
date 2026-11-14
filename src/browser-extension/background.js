@@ -285,10 +285,9 @@ async function syncState() {
   return igSync || { armedUntil: 0, sentAt: 0 };
 }
 
-async function armInstagramSync() {
-  const state = await syncState();
-  if (Date.now() - state.sentAt < 15000) return { ok: true, loggedIn: true }; // already sent for this click
-  await chrome.storage.session.set({ igSync: { armedUntil: Date.now() + SYNC_ARM_MS, sentAt: 0 } });
+// Each click in the app opens a new tab, so a new tab id means a new sync.
+async function armInstagramSync(tabId) {
+  await chrome.storage.session.set({ igSync: { armedUntil: Date.now() + SYNC_ARM_MS, sentAt: 0, tabId } });
   return trySendInstagramCookies();
 }
 
@@ -320,7 +319,7 @@ async function doSendInstagramCookies() {
       expirationDate: Math.floor(c.expirationDate || 0)
     }))
   });
-  await chrome.storage.session.set({ igSync: { armedUntil: 0, sentAt: Date.now() } });
+  await chrome.storage.session.set({ igSync: { armedUntil: 0, sentAt: Date.now(), tabId: state.tabId } });
   return { ok: true, loggedIn: true };
 }
 
@@ -328,7 +327,7 @@ async function doSendInstagramCookies() {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (!changeInfo.url || !changeInfo.url.includes(SYNC_HASH)) return;
   try {
-    if (isInstagramHost(new URL(changeInfo.url).hostname)) armInstagramSync().catch(() => {});
+    if (isInstagramHost(new URL(changeInfo.url).hostname)) armInstagramSync(tabId).catch(() => {});
   } catch {}
 });
 
@@ -341,7 +340,14 @@ chrome.cookies.onChanged.addListener(({ removed, cookie }) => {
 async function sendInstagramCookies(tab) {
   const host = tab?.url ? new URL(tab.url).hostname : '';
   if (!isInstagramHost(host)) throw new Error('Not an Instagram tab');
-  return armInstagramSync();
+
+  // Usually the tab listener above already armed (and maybe sent) for this tab: just report.
+  const state = await syncState();
+  if (state.tabId === tab.id) {
+    if (state.sentAt) return { ok: true, loggedIn: true };
+    if (Date.now() < state.armedUntil) return trySendInstagramCookies();
+  }
+  return armInstagramSync(tab.id);
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

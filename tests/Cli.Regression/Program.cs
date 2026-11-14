@@ -224,6 +224,44 @@ await Run("extension cookie relay (Instagram sync for Chrome/Edge)", async () =>
     Check(header.Contains("sessionid=123%3Aabc") && header.Contains("csrftoken=tok"), $"http-only sessionid is readable ({header})");
 });
 
+await Run("bridge /api/v1/cookies route", async () =>
+{
+    using var bridge = new LocalBridgeServer(() => new BridgeStatus());
+    bridge.CookiesReceived = ExtensionCookieRelay.Deliver;
+    if (!bridge.TryStart(out var error))
+    {
+        // The real app holds port 45780 on a dev PC; CI runs this check.
+        Console.WriteLine($"       (skipped: {error})");
+        return;
+    }
+
+    // Exactly what background.js sends.
+    const string body = """
+        {"domain":"instagram.com","cookies":[{"name":"sessionid","value":"42%3Axyz","domain":".instagram.com","path":"/","secure":true,"httpOnly":true,"hostOnly":false,"expirationDate":1900000000}]}
+        """;
+    using var http = new HttpClient();
+    async Task<int> Post(string? origin)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"http://127.0.0.1:{LocalBridgeServer.Port}/api/v1/cookies")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        if (origin is not null)
+            request.Headers.Add("Origin", origin);
+        using var response = await http.SendAsync(request);
+        return (int)response.StatusCode;
+    }
+
+    Check(await Post(null) == 403, "a plain local process may not send cookies");
+    Check(await Post("https://evil.example") == 403, "a web page may not send cookies");
+    Check(await Post("chrome-extension://abc") == 409, "refused while no sync waits");
+
+    var wait = ExtensionCookieRelay.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
+    Check(await Post("chrome-extension://abc") == 202, "accepted while a sync waits");
+    var got = await wait;
+    Check(got?.Cookies is [{ Name: "sessionid", Value: "42%3Axyz", HttpOnly: true, ExpirationDate: 1900000000 }], "parsed cookie");
+});
+
 // ---- the real CLI process ------------------------------------------------------------------
 
 await Run("downloadmaster-cli get downloads and prints the path", async () =>

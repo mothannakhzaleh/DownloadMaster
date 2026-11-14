@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DownloadMaster",
   "short_name": "DownloadMaster",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Send browser downloads and videos to the DownloadMaster desktop app, with cookies and headers included.",
   "homepage_url": "https://github.com/mothannakhzaleh/DownloadMaster",
   "minimum_chrome_version": "116",

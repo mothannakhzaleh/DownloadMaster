@@ -56,6 +56,7 @@ public partial class App : Application
             CreateTrayIcon();
             StartBridge();
             ApplyRemoteAccess(_window.Settings);
+            RefreshInstalledExtension();
 
             var launch = LaunchOptions.Parse(desktop.Args);
             var startMinimized = launch.StartMinimized && _window.MinimizeToTrayEnabled;
@@ -177,6 +178,26 @@ public partial class App : Application
         _pauseItem!.Header = loc.Get("TrayPauseAll");
         _resumeItem!.Header = loc.Get("TrayResumeAll");
         _exitItem!.Header = loc.Get("TrayExit");
+    }
+
+    /// <summary>
+    /// The browser loads the unpacked extension from the data folder; keep that copy in step with the
+    /// app so an update only needs "Reload" on the browser's extensions page.
+    /// </summary>
+    private static void RefreshInstalledExtension()
+    {
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                if (BrowserExtensionInstaller.IsBundled && Directory.Exists(BrowserExtensionInstaller.InstallDir))
+                    BrowserExtensionInstaller.PrepareInstallFolder();
+            }
+            catch
+            {
+                // a file locked by the browser; the install window refreshes it again
+            }
+        });
     }
 
     private void StartBridge()
