@@ -25,6 +25,9 @@ VideoDownloader/
 ├── scripts/                         # .bat (Windows) and .sh (Linux / macOS)
 │   ├── setup-tools    build    run    test    publish    clean.bat    release-github.bat
 │   └── screenshots.ps1              # Regenerates docs/images from the ship build
+├── packaging/                       # Installer / package definitions used by release.yml
+│   ├── windows/DownloadMaster.iss   # Inno Setup script → per-user -setup.exe
+│   └── linux/downloadmaster.desktop # Menu entry installed by the .deb
 ├── docs/
 │   ├── images/                      # README screenshots
 │   ├── plans/upgrade-plan.md
@@ -88,6 +91,11 @@ src/DownloadMaster/
 `AppPaths.DataDir` = `%AppData%\DownloadMaster` (Windows) or `~/.config/DownloadMaster` (macOS / Linux), or
 `$DOWNLOADMASTER_DATA_DIR` when set (tests and `scripts\run.bat --sandbox` use `test-output/`).
 
+**Portable mode:** when a file named `DownloadMaster.portable` sits next to the executable
+(`AppContext.BaseDirectory`), `DataDir` is `<exe dir>/data` and `AppPaths.IsPortable` is true. The environment
+variable still wins over the marker. Only the data folder moves; the default download folder does not. The
+`-portable.zip` release and `scripts/publish --portable` ship the marker; the installer and `.deb` never do.
+
 | File | Purpose |
 |------|---------|
 | `settings.json` | Save folder, theme, language, connections, tray, scheduler, interception, categories |
@@ -111,10 +119,29 @@ src/DownloadMaster/
 | `scripts/build` | `dotnet build -c Release` |
 | `scripts/run` | Build, then start (`--sandbox` = data in `test-output/sandbox`) |
 | `scripts/test` | `dotnet run` every project in `tests/` with a sandbox data folder |
-| `scripts/publish` | Self-contained single-file publish → `ship/<rid>/` with `tools/` and `browser-extension/` |
+| `scripts/publish` | Self-contained single-file publish → `ship/<rid>/` with `tools/` and `browser-extension/`, plus `downloadmaster-cli` when `src/DownloadMaster.Cli` exists; `--portable` adds the portable marker |
 | `scripts/clean.bat` | Delete `bin/`, `obj/`, `test-output/`, `ship/` |
 | `scripts/release-github.bat` | Local win-x64 release upload (fallback; prefer tagging) |
 | `scripts/screenshots.ps1` | Run the ship build sandboxed and capture `docs/images/*.png` |
+
+## Release formats
+
+`release.yml` builds every platform on GitHub-hosted runners. `<tag>` is `vX.Y.Z`, or `nightly` for the rolling
+pre-release. Every file is listed in `SHA256SUMS.txt`.
+
+| File | Built with | Contents |
+|------|-----------|----------|
+| `DownloadMaster-<tag>-win-x64.zip` | 7-Zip | App folder: `DownloadMaster.exe`, `tools/`, `browser-extension/` |
+| `DownloadMaster-<tag>-win-x64-portable.zip` | 7-Zip | Same files plus the `DownloadMaster.portable` marker |
+| `DownloadMaster-<tag>-win-x64-setup.exe` | Inno Setup (`packaging/windows/DownloadMaster.iss`) | Per-user install to `%LocalAppData%\Programs\DownloadMaster`: Start menu entry, optional desktop shortcut, optional user-PATH entry for `downloadmaster-cli`, uninstaller; closes a running copy first |
+| `DownloadMaster-<tag>-linux-x64.tar.gz` | tar | App folder plus `downloadmaster.png` |
+| `DownloadMaster-<tag>-linux-x64.deb` | dpkg-deb | `/opt/downloadmaster`, `/usr/bin/downloadmaster` (+ `downloadmaster-cli`), menu entry and icon; tag versions become Debian versions (`2.0.0-nightly.5` → `2.0.0~nightly.5`) |
+| `DownloadMaster-<tag>-osx-arm64.zip` / `-osx-x64.zip` | ditto | Ad-hoc signed `DownloadMaster.app` (tools in `Contents/MacOS/tools`) + README |
+| `DownloadMaster-<tag>-osx-arm64.dmg` / `-osx-x64.dmg` | hdiutil (UDZO) | The same `.app` with an Applications shortcut |
+| `DownloadMaster-<tag>-browser-extension.zip` | zip | The extension, with a Chrome-compatible numeric version |
+
+The command-line tool (`src/DownloadMaster.Cli`, `downloadmaster-cli`) is published next to the app in every
+package when that project exists. None of the packages are signed with a paid certificate.
 
 ## Release checklist
 

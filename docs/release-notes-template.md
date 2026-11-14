@@ -33,18 +33,22 @@
 
 | Platform | File |
 |----------|------|
-| Windows 10/11 x64 | `DownloadMaster-{{VERSION}}-win-x64.zip` |
-| macOS Apple Silicon (M1+) | `DownloadMaster-{{VERSION}}-osx-arm64.zip` |
-| macOS Intel | `DownloadMaster-{{VERSION}}-osx-x64.zip` |
-| Linux x64 | `DownloadMaster-{{VERSION}}-linux-x64.tar.gz` |
+| Windows 10/11 x64 — installer | `DownloadMaster-{{VERSION}}-win-x64-setup.exe` |
+| Windows 10/11 x64 — zip | `DownloadMaster-{{VERSION}}-win-x64.zip` |
+| Windows 10/11 x64 — portable | `DownloadMaster-{{VERSION}}-win-x64-portable.zip` |
+| macOS Apple Silicon (M1+) | `DownloadMaster-{{VERSION}}-osx-arm64.dmg` or `DownloadMaster-{{VERSION}}-osx-arm64.zip` |
+| macOS Intel | `DownloadMaster-{{VERSION}}-osx-x64.dmg` or `DownloadMaster-{{VERSION}}-osx-x64.zip` |
+| Linux x64 — Debian / Ubuntu | `DownloadMaster-{{VERSION}}-linux-x64.deb` |
+| Linux x64 — any distribution | `DownloadMaster-{{VERSION}}-linux-x64.tar.gz` |
 | Browser extension | `DownloadMaster-{{VERSION}}-browser-extension.zip` (also bundled with the app) |
 
 `SHA256SUMS.txt` lists checksums for every file. No .NET runtime is required.
 
 ### Install
 
-- **Windows** — extract the zip and run `DownloadMaster.exe`.
-- **macOS** — unzip and drag `DownloadMaster.app` to Applications. The app is not notarized: the first time, right-click → **Open** (macOS 15+: **System Settings → Privacy & Security → Open Anyway**), or run `xattr -dr com.apple.quarantine /Applications/DownloadMaster.app`. If FFmpeg is reported missing: `brew install ffmpeg yt-dlp`.
-- **Linux** — `tar -xzf DownloadMaster-{{VERSION}}-linux-x64.tar.gz` and run `./DownloadMaster` inside the extracted folder.
+- **Windows** — run the `-setup.exe` (per-user install, no administrator rights; optional desktop shortcut and `downloadmaster-cli` on PATH), or extract the zip and run `DownloadMaster.exe`. The `-portable.zip` keeps settings and download state in a `data` folder next to the app instead of your profile.
+- **macOS** — open the `.dmg` (or unzip the `.zip`) and drag `DownloadMaster.app` to Applications. The app is not notarized: the first time, right-click → **Open** (macOS 15+: **System Settings → Privacy & Security → Open Anyway**), or run `xattr -dr com.apple.quarantine /Applications/DownloadMaster.app`. If FFmpeg is reported missing: `brew install ffmpeg yt-dlp`.
+- **Linux (Debian / Ubuntu)** — `sudo apt install ./DownloadMaster-{{VERSION}}-linux-x64.deb`, then start DownloadMaster from the app menu or run `downloadmaster`.
+- **Linux (other)** — `tar -xzf DownloadMaster-{{VERSION}}-linux-x64.tar.gz` and run `./DownloadMaster` inside the extracted folder.
 
 Bundled **yt-dlp** and **FFmpeg** are included under `tools/`.

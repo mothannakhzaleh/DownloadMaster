@@ -153,6 +153,35 @@ jobs:
           rm -f out/publish/tools/ffmpeg/.gitkeep
           ls -la out/publish
 
+      # Optional command-line companion. Published on its own, then only its executable is copied
+      # next to the app, so it can never overwrite the app's files.
+      - name: Publish command-line tool (when present)
+        run: |
+          cli_project=src/DownloadMaster.Cli/DownloadMaster.Cli.csproj
+          if [ ! -f "$cli_project" ]; then
+            echo "No $cli_project in this checkout; skipping the command-line tool."
+            exit 0
+          fi
+          dotnet publish "$cli_project" -c Release -r "$RID" --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:EnableCompressionInSingleFile=true \
+            -p:DebugType=None \
+            -p:Version="$VERSION" \
+            -o out/cli
+          case "$RID" in
+            win-*) cli_exe=downloadmaster-cli.exe ;;
+            *)     cli_exe=downloadmaster-cli ;;
+          esac
+          if [ ! -f "out/cli/$cli_exe" ]; then
+            echo "::error::out/cli/$cli_exe was not produced (is AssemblyName downloadmaster-cli?)"
+            ls -la out/cli
+            exit 1
+          fi
+          cp "out/cli/$cli_exe" out/publish/
+          chmod +x "out/publish/$cli_exe"
+          ls -la out/publish
+
       - name: Bundle yt-dlp
         run: |
           case "$RID" in
@@ -247,6 +276,60 @@ jobs:
           cd ../..
           ls -la dist
 
+      # Same files plus the portable marker: settings and data stay in <folder>/data.
+      # Built from its own copy so the marker never reaches the plain zip or the installer.
+      - name: Package (Windows portable .zip)
+        if: runner.os == 'Windows'
+        run: |
+          stage=out/portable
+          mkdir -p "$stage"
+          cp -R out/publish/. "$stage/"
+          printf '%s\r\n' \
+            'DownloadMaster portable mode.' \
+            'While this file is next to DownloadMaster.exe, settings and download state are kept' \
+            'in the "data" folder here instead of the user profile. Delete it to use the profile.' \
+            > "$stage/DownloadMaster.portable"
+          (cd "$stage" && 7z a -tzip -mx=7 "../../dist/$PKG_NAME-portable.zip" * > /dev/null)
+          ls -la dist
+
+      # Inno Setup runs under PowerShell: Git Bash would rewrite the /D... switches as paths.
+      - name: Package (Windows installer)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          function Find-Iscc {
+            $candidates = @('C:\Program Files (x86)\Inno Setup 6\ISCC.exe')
+            $candidates += @(Get-ChildItem -Path "${env:ProgramFiles(x86)}\Inno Setup*\ISCC.exe", "$env:ProgramFiles\Inno Setup*\ISCC.exe" -ErrorAction SilentlyContinue | ForEach-Object FullName)
+            $candidates += @(Get-Command ISCC.exe -ErrorAction SilentlyContinue | ForEach-Object Source)
+            $candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+          }
+
+          $iscc = Find-Iscc
+          if (-not $iscc) {
+            Write-Host 'Inno Setup not found; installing it with Chocolatey...'
+            choco install innosetup -y --no-progress
+            if ($LASTEXITCODE -ne 0) { Write-Host "::warning::choco install innosetup exited with $LASTEXITCODE" }
+            $iscc = Find-Iscc
+          }
+          if (-not $iscc) {
+            Write-Host '::error::ISCC.exe (Inno Setup) is still missing after the Chocolatey install; cannot build the installer.'
+            exit 1
+          }
+          Write-Host "Using $iscc"
+
+          $numeric = ($env:VERSION -split '[-+]')[0]
+          $root = (Get-Location).Path
+          & $iscc `
+            "/DAppVersion=$env:VERSION" `
+            "/DNumericVersion=$numeric" `
+            "/DPublishDir=$root\out\publish" `
+            "/O$root\dist" `
+            "/F$env:PKG_NAME-setup" `
+            "$root\packaging\windows\DownloadMaster.iss"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::ISCC failed with exit code $LASTEXITCODE"; exit $LASTEXITCODE }
+          if (-not (Test-Path -LiteralPath "dist\$env:PKG_NAME-setup.exe")) { Write-Host '::error::installer not produced'; exit 1 }
+          Get-ChildItem dist
+
       - name: Package (Linux .tar.gz)
         if: runner.os == 'Linux'
         run: |
@@ -259,6 +342,70 @@ jobs:
           chmod +x "$stage/tools/ffmpeg/ffmpeg" "$stage/tools/ffmpeg/ffprobe"
           tar -czf "dist/$PKG_NAME.tar.gz" -C out/stage "$PKG_NAME"
           tar -tzvf "dist/$PKG_NAME.tar.gz" > out/tar-list.txt && head -n 20 out/tar-list.txt
+          ls -la dist
+
+      # /opt/downloadmaster + /usr/bin launchers + menu entry. The .NET runtime is bundled, so only
+      # native libraries it and Avalonia load at run time are dependencies.
+      - name: Package (Linux .deb)
+        if: runner.os == 'Linux'
+        run: |
+          # Debian versions sort "~" before anything: 2.0.0-nightly.5 -> 2.0.0~nightly.5 (< 2.0.0).
+          deb_version="$(printf '%s' "$VERSION" | tr '-' '~')"
+          if ! dpkg --validate-version "$deb_version"; then
+            echo "::error::'$deb_version' is not a valid Debian version"
+            exit 1
+          fi
+
+          root=out/deb/downloadmaster
+          app="$root/opt/downloadmaster"
+          rm -rf out/deb
+          mkdir -p "$root/DEBIAN" "$app" "$root/usr/bin" "$root/usr/share/applications" \
+            "$root/usr/share/icons/hicolor/128x128/apps" "$root/usr/share/doc/downloadmaster"
+
+          cp -R out/publish/. "$app/"
+          rm -f "$app/DownloadMaster.portable"
+          cp LICENSE THIRD_PARTY_LICENSES.md "$root/usr/share/doc/downloadmaster/"
+          cp packaging/linux/downloadmaster.desktop "$root/usr/share/applications/downloadmaster.desktop"
+          cp src/browser-extension/icons/icon128.png "$root/usr/share/icons/hicolor/128x128/apps/downloadmaster.png"
+
+          # Normal permissions first, then the executables.
+          find "$root" -type d -exec chmod 755 {} +
+          find "$root" -type f -exec chmod 644 {} +
+          chmod 755 "$app/DownloadMaster"
+          for f in "$app/downloadmaster-cli" "$app/tools/yt-dlp" "$app/tools/ffmpeg/ffmpeg" "$app/tools/ffmpeg/ffprobe"; do
+            if [ -f "$f" ]; then chmod 755 "$f"; fi
+          done
+
+          ln -s /opt/downloadmaster/DownloadMaster "$root/usr/bin/downloadmaster"
+          if [ -f "$app/downloadmaster-cli" ]; then
+            ln -s /opt/downloadmaster/downloadmaster-cli "$root/usr/bin/downloadmaster-cli"
+          fi
+
+          installed_kb="$(du -sk --exclude=DEBIAN "$root" | cut -f1)"
+          cat > "$root/DEBIAN/control" <<EOF
+          Package: downloadmaster
+          Version: $deb_version
+          Section: net
+          Priority: optional
+          Architecture: amd64
+          Maintainer: mothannakh
+          Installed-Size: $installed_kb
+          Depends: libc6, libgcc-s1 | libgcc1, libstdc++6, libicu78 | libicu77 | libicu76 | libicu74 | libicu72 | libicu71 | libicu70 | libicu67 | libicu66, libssl3t64 | libssl3 | libssl1.1, libfontconfig1, libx11-6, libice6, libsm6
+          Suggests: espeak-ng
+          Homepage: https://github.com/mothannakhzaleh/DownloadMaster
+          Description: Download manager and media converter
+           Downloads videos from many sites (yt-dlp), Instagram profiles and direct
+           files over multiple connections, catches browser downloads through its
+           extension, and converts video, audio and images.
+           .
+           Self-contained: the .NET runtime, yt-dlp and FFmpeg are included.
+          EOF
+          cat "$root/DEBIAN/control"
+
+          mkdir -p dist
+          dpkg-deb --root-owner-group -Zxz --build "$root" "dist/$PKG_NAME.deb"
+          dpkg-deb --info "dist/$PKG_NAME.deb"
+          dpkg-deb --contents "dist/$PKG_NAME.deb" | head -n 30
           ls -la dist
 
       - name: Package (macOS .app in .zip)
@@ -337,7 +484,8 @@ jobs:
 
           # Ad-hoc signature (no Apple Developer ID). Keeps Gatekeeper's
           # "Open Anyway" path available instead of the "app is damaged" error.
-          for f in "$macos/tools/yt-dlp" "$macos/tools/ffmpeg/ffmpeg" "$macos/tools/ffmpeg/ffprobe"; do
+          # Nested executables must be signed before the bundle itself.
+          for f in "$macos/downloadmaster-cli" "$macos/tools/yt-dlp" "$macos/tools/ffmpeg/ffmpeg" "$macos/tools/ffmpeg/ffprobe"; do
             [ -f "$f" ] || continue
             codesign -v "$f" 2>/dev/null || codesign --force --sign - "$f" || echo "::warning::could not sign $f"
           done
@@ -360,6 +508,37 @@ jobs:
           EOF
 
           ditto -c -k --sequesterRsrc --keepParent "$stage" "dist/$PKG_NAME.zip"
+          ls -la dist
+
+      # Disk image with the same (unsigned, ad-hoc signed) app and an Applications shortcut to drag onto.
+      - name: Package (macOS .dmg)
+        if: runner.os == 'macOS'
+        run: |
+          src="out/stage/$PKG_NAME"
+          vol="out/dmg/DownloadMaster"
+          rm -rf out/dmg
+          mkdir -p "$vol"
+          ditto "$src/DownloadMaster.app" "$vol/DownloadMaster.app"
+          cp "$src/README-macOS.txt" "$src/LICENSE" "$src/THIRD_PARTY_LICENSES.md" "$vol/"
+          ln -s /Applications "$vol/Applications"
+
+          # hdiutil sometimes fails with "Resource busy" on hosted runners; retry a few times.
+          dmg="dist/$PKG_NAME.dmg"
+          ok=false
+          for attempt in 1 2 3 4; do
+            rm -f "$dmg"
+            if hdiutil create -volname DownloadMaster -srcfolder "$vol" -fs HFS+ -format UDZO -ov "$dmg"; then
+              ok=true
+              break
+            fi
+            echo "hdiutil create failed (attempt $attempt); retrying..."
+            sleep $((attempt * 5))
+          done
+          if [ "$ok" != true ]; then
+            echo "::error::hdiutil could not create $dmg"
+            exit 1
+          fi
+          hdiutil verify "$dmg"
           ls -la dist
 
       - name: Upload package
@@ -433,10 +612,13 @@ jobs:
               echo
               echo "| System | File |"
               echo "|--------|------|"
-              echo "| Windows x64 | \`DownloadMaster-nightly-win-x64.zip\` |"
-              echo "| macOS Apple Silicon | \`DownloadMaster-nightly-osx-arm64.zip\` |"
-              echo "| macOS Intel | \`DownloadMaster-nightly-osx-x64.zip\` |"
-              echo "| Linux x64 | \`DownloadMaster-nightly-linux-x64.tar.gz\` |"
+              echo "| Windows x64 — installer | \`DownloadMaster-nightly-win-x64-setup.exe\` |"
+              echo "| Windows x64 — zip | \`DownloadMaster-nightly-win-x64.zip\` |"
+              echo "| Windows x64 — portable | \`DownloadMaster-nightly-win-x64-portable.zip\` (keeps its data in \`data/\` next to the app) |"
+              echo "| macOS Apple Silicon | \`DownloadMaster-nightly-osx-arm64.dmg\` or \`.zip\` |"
+              echo "| macOS Intel | \`DownloadMaster-nightly-osx-x64.dmg\` or \`.zip\` |"
+              echo "| Linux x64 — Debian / Ubuntu | \`DownloadMaster-nightly-linux-x64.deb\` |"
+              echo "| Linux x64 — any distribution | \`DownloadMaster-nightly-linux-x64.tar.gz\` |"
               echo "| Browser extension | \`DownloadMaster-nightly-browser-extension.zip\` (also bundled with the app) |"
               echo
               echo "Standalone: each package includes yt-dlp, FFmpeg and the browser extension. Checksums: \`SHA256SUMS.txt\`."

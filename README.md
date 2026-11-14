@@ -96,13 +96,25 @@ Open [Releases](https://github.com/mothannakhzaleh/DownloadMaster/releases) and 
 
 | System | File | Run |
 |--------|------|-----|
-| Windows x64 | `DownloadMaster-v*-win-x64.zip` | Extract anywhere, run `DownloadMaster.exe` |
-| macOS Apple Silicon | `DownloadMaster-v*-osx-arm64.zip` | Unzip, drag `DownloadMaster.app` to Applications |
-| macOS Intel | `DownloadMaster-v*-osx-x64.zip` | Unzip, drag `DownloadMaster.app` to Applications |
-| Linux x64 | `DownloadMaster-v*-linux-x64.tar.gz` | `tar -xzf DownloadMaster-v*-linux-x64.tar.gz`, then `./DownloadMaster` |
+| Windows x64 — installer | `DownloadMaster-v*-win-x64-setup.exe` | Run it: installs for your user only (no administrator rights) to `%LocalAppData%\Programs\DownloadMaster`, with a Start menu entry and an uninstaller |
+| Windows x64 — zip | `DownloadMaster-v*-win-x64.zip` | Extract anywhere, run `DownloadMaster.exe` |
+| Windows x64 — portable | `DownloadMaster-v*-win-x64-portable.zip` | Extract anywhere (e.g. a USB drive), run `DownloadMaster.exe` — settings stay in the `data` folder next to it |
+| macOS Apple Silicon | `DownloadMaster-v*-osx-arm64.dmg` (or `.zip`) | Open, drag `DownloadMaster.app` to Applications |
+| macOS Intel | `DownloadMaster-v*-osx-x64.dmg` (or `.zip`) | Open, drag `DownloadMaster.app` to Applications |
+| Debian / Ubuntu x64 | `DownloadMaster-v*-linux-x64.deb` | `sudo apt install ./DownloadMaster-v*-linux-x64.deb`, then start it from the app menu or run `downloadmaster` |
+| Linux x64 (any) | `DownloadMaster-v*-linux-x64.tar.gz` | `tar -xzf DownloadMaster-v*-linux-x64.tar.gz`, then `./DownloadMaster` |
 | Browser extension | `DownloadMaster-v*-browser-extension.zip` | Also bundled with the app — use *Install browser extension…* |
 
 Nothing else to install: each package contains the app, **yt-dlp**, **FFmpeg** and the browser extension.
+
+- **Installer options:** a desktop shortcut, and *Add the command-line tool to PATH* (your user PATH only; shown
+  when the build includes `downloadmaster-cli`). Uninstall from **Settings → Apps**; your settings in
+  `%AppData%\DownloadMaster` are kept.
+- **Portable mode:** any copy of the app becomes portable when a file named `DownloadMaster.portable` sits next to
+  the executable — settings, resume state and the extension copy then live in `data/` beside it instead of your
+  profile. Delete the file to go back. (`DOWNLOADMASTER_DATA_DIR`, when set, still takes precedence.)
+- **Debian package:** installs to `/opt/downloadmaster` with `downloadmaster` (and `downloadmaster-cli`, when
+  included) in `/usr/bin`. Remove with `sudo apt remove downloadmaster`.
 
 **Latest development build:** the [`nightly` pre-release](https://github.com/mothannakhzaleh/DownloadMaster/releases/tag/nightly) is rebuilt on every push to `master` with the same standalone packages (`DownloadMaster-nightly-*`). It always holds only the newest build.
 `SHA256SUMS.txt` on the release page lists checksums.

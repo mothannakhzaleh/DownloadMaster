@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=DownloadMaster
+GenericName=Download Manager
+Comment=Download videos and files over multiple connections, convert media
+Exec=downloadmaster %U
+Icon=downloadmaster
+Terminal=false
+Categories=Network;FileTransfer;AudioVideo;
+Keywords=download;video;yt-dlp;ffmpeg;convert;
