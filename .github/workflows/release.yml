@@ -472,3 +472,13 @@ jobs:
           make_latest: ${{ needs.version.outputs.nightly == 'true' && 'false' || 'true' }}
           fail_on_unmatched_files: true
           files: dist/*
+
+      # The action's prerelease / make_latest inputs were not applied to the first nightly (it became
+      # "Latest"), so set both explicitly: the nightly must never replace the stable /releases/latest.
+      - name: Keep nightly as a pre-release
+        if: needs.version.outputs.nightly == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release edit nightly --repo "$GITHUB_REPOSITORY" --prerelease --latest=false
+          gh release view nightly --repo "$GITHUB_REPOSITORY" --json isPrerelease --jq '.isPrerelease' | grep -qx true
