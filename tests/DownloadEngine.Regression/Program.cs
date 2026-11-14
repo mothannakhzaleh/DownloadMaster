@@ -142,10 +142,14 @@ await Run("resume after the process is killed mid-download", async () =>
     }
 
     server.Throttle = (_, _) => 0;
-    var sentBefore = server.BytesSent;
+    // Count the ranges the resumed download asks for. BytesSent would also count bytes the server keeps
+    // pushing into the killed child's sockets until the OS reports them closed (seen on Linux CI).
+    var logBefore = server.Log.Count;
     var item = NewItem(server.Url("/crash.bin"), connections: 4, id: id, folder: folder);
     await service.DownloadAsync(item, 4, null, null, CancellationToken.None);
-    var resumedBytes = server.BytesSent - sentBefore;
+    var resumedBytes = server.Log.Skip(logBefore)
+        .Where(r => r.Path == "/crash.bin" && r.Status is 200 or 206)
+        .Sum(r => r.RangeStart is { } s && r.RangeEnd is { } e ? Math.Min(e, data.Length - 1) - s + 1 : data.Length);
 
     Check(await ShaFile(item.OutputPath) == Sha(data), "SHA-256 mismatch after crash resume");
     Check(resumedBytes < data.Length - done / 2, $"resume re-downloaded {resumedBytes} bytes (saved {done})");
