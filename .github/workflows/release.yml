@@ -4,8 +4,9 @@
 # Cut a release:   git tag v2.0.0 && git push origin v2.0.0
 # Or manually:     Actions -> Release -> Run workflow -> version 2.0.0
 #
-# Nightly: every push to master rebuilds the same packages and replaces the single
-# "nightly" pre-release (fixed file names, never marked as the latest release).
+# Nightly: every push to master rebuilds the same packages and replaces the single "nightly"
+# release (fixed file names). It starts as a pre-release; promote-nightly.yml marks it as the
+# latest release once CI and this workflow are both green for that commit.
 name: Release
 
 on:
@@ -608,8 +609,8 @@ jobs:
               echo
               echo "Automatic build of \`master\` at [\`$short_sha\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) ($date_str): $subject"
               echo
-              echo "> Development build, rebuilt on every push to master and replaced each time."
-              echo "> For a stable version use the [latest release]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/latest)."
+              echo "> Built from every push to master and replaced each time. It becomes the latest release"
+              echo "> once all tests pass on Windows, Linux and macOS."
               echo
               echo "| System | File |"
               echo "|--------|------|"
@@ -657,8 +658,9 @@ jobs:
           files: dist/*
 
       # The action's prerelease / make_latest inputs were not applied to the first nightly (it became
-      # "Latest"), so set both explicitly: the nightly must never replace the stable /releases/latest.
-      - name: Keep nightly as a pre-release
+      # "Latest"), so set both explicitly: a new nightly is a pre-release until promote-nightly.yml
+      # sees CI green for the same commit and makes it the latest release.
+      - name: Publish nightly as a pre-release until CI is green
         if: needs.version.outputs.nightly == 'true'
         env:
           GH_TOKEN: ${{ github.token }}

@@ -1,0 +1,50 @@
+# Makes the nightly the "Latest" release once it is green: CI (tests on Windows, Linux, macOS) and
+# Release (packages) both passed for the commit the nightly was built from. Runs after either of them
+# finishes, so whichever completes last does the promotion. A red commit leaves the nightly as a
+# pre-release, and /releases/latest keeps pointing at the last green build or tagged release.
+name: Promote nightly
+
+on:
+  workflow_run:
+    workflows: [CI, Release]
+    types: [completed]
+    branches: [master]
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: promote-nightly
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark the nightly as the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          passed() {
+            gh run list --repo "$REPO" --workflow "$1" --commit "$SHA" --json conclusion \
+              --jq '[.[] | select(.conclusion == "success")] | length'
+          }
+
+          if [ "$(passed ci.yml)" = "0" ]; then echo "CI has not passed for $SHA (yet); nothing to do."; exit 0; fi
+          if [ "$(passed release.yml)" = "0" ]; then echo "Release has not passed for $SHA (yet); nothing to do."; exit 0; fi
+
+          target="$(gh api "repos/$REPO/git/ref/tags/nightly" --jq '.object.sha' 2>/dev/null || true)"
+          if [ "$target" != "$SHA" ]; then
+            echo "The nightly is built from ${target:-nothing}, not $SHA (a newer push replaced it); skipping."
+            exit 0
+          fi
+
+          gh release edit nightly --repo "$REPO" --prerelease=false --latest
+          latest="$(gh api "repos/$REPO/releases/latest" --jq '.tag_name')"
+          echo "Latest release: $latest"
+          [ "$latest" = "nightly" ]

@@ -118,7 +118,7 @@ Nothing else to install: each package contains the app, **yt-dlp**, **FFmpeg** a
 - **Debian package:** installs to `/opt/downloadmaster` with `downloadmaster` (and `downloadmaster-cli`, when
   included) in `/usr/bin`. Remove with `sudo apt remove downloadmaster`.
 
-**Latest development build:** the [`nightly` pre-release](https://github.com/mothannakhzaleh/DownloadMaster/releases/tag/nightly) is rebuilt on every push to `master` with the same standalone packages (`DownloadMaster-nightly-*`). It always holds only the newest build.
+**Latest build:** the [`nightly` release](https://github.com/mothannakhzaleh/DownloadMaster/releases/tag/nightly) is rebuilt on every push to `master` with the same standalone packages (`DownloadMaster-nightly-*`) and becomes the **latest release** as soon as all tests pass on Windows, Linux and macOS. It always holds only the newest build.
 `SHA256SUMS.txt` on the release page lists checksums.
 
 **Install the browser extension:** right-click the tray icon → **Install browser extension…** (or Settings →
@@ -242,7 +242,8 @@ Official builds run on **GitHub-hosted runners**, not your machine.
 | Workflow | Trigger | What it does |
 |----------|---------|--------------|
 | [`ci.yml`](.github/workflows/ci.yml) | Every push and pull request | Builds on Windows, Linux and macOS; runs the image and download-engine regression tests; checks the browser extension; uploads a 7-day build artifact |
-| [`release.yml`](.github/workflows/release.yml) — nightly | Every push to `master` (code changes) | Same packages as a release, published to the single `nightly` pre-release (replaced each time, never marked "latest") |
+| [`release.yml`](.github/workflows/release.yml) — nightly | Every push to `master` (code changes) | Same packages as a release, published to the single `nightly` release (replaced each time; a pre-release until green) |
+| [`promote-nightly.yml`](.github/workflows/promote-nightly.yml) | CI or Release finished on `master` | Marks the nightly as the latest release once CI and Release both passed for its commit |
 | [`release.yml`](.github/workflows/release.yml) — release | Push of a `v*` tag (or manual run) | Standalone builds for `win-x64`, `linux-x64`, `osx-arm64`, `osx-x64` with yt-dlp + FFmpeg, macOS `.app`, the extension zip, checksums, and the GitHub Release |
 
 Cut a release:

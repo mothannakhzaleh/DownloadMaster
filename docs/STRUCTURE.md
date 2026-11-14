@@ -12,7 +12,8 @@ VideoDownloader/
 ├── README.md · LICENSE · THIRD_PARTY_LICENSES.md
 ├── .github/workflows/
 │   ├── ci.yml                       # Build + tests on Windows / Linux / macOS, extension check
-│   └── release.yml                  # Tag v* → GitHub Release; push to master → "nightly" pre-release
+│   ├── release.yml                  # Tag v* → GitHub Release; push to master → "nightly" release
+│   └── promote-nightly.yml          # Green nightly (CI + Release passed) → latest release
 ├── src/
 │   ├── DownloadMaster/              # The app (see below)
 │   ├── DownloadMaster.Cli/          # downloadmaster-cli: get / add / serve / list / status (links the app's UI-free sources)
