@@ -66,6 +66,31 @@
                 </Grid>
                 <TextBlock x:Name="SchedulerHintText" Classes="secondary" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,14" />
 
+                <TextBlock x:Name="RemoteHeader" Text="Remote access" FontWeight="SemiBold" Margin="0,4,0,6" />
+                <CheckBox x:Name="RemoteEnabledCheck" Margin="0,0,0,8">
+                    <TextBlock x:Name="RemoteEnabledText" TextWrapping="Wrap"
+                               Text="Control downloads from a phone or another computer (web page + command-line tool)" />
+                </CheckBox>
+                <CheckBox x:Name="RemoteNetworkCheck" Margin="28,0,0,8" IsEnabled="{Binding #RemoteEnabledCheck.IsChecked}">
+                    <TextBlock x:Name="RemoteNetworkText" TextWrapping="Wrap"
+                               Text="Allow devices on my home network (otherwise this computer only)" />
+                </CheckBox>
+                <StackPanel Orientation="Horizontal" Margin="28,0,0,8" Spacing="8">
+                    <TextBlock x:Name="RemotePortLabel" Text="Port" VerticalAlignment="Center" />
+                    <TextBox x:Name="RemotePortBox" Width="90" Watermark="45781" FlowDirection="LeftToRight"
+                             IsEnabled="{Binding #RemoteEnabledCheck.IsChecked}" />
+                </StackPanel>
+                <TextBlock x:Name="RemoteStatusText" Classes="secondary" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,4" />
+                <SelectableTextBlock x:Name="RemoteLinkText" FontFamily="Consolas,Menlo,monospace" FontSize="12"
+                                     TextWrapping="Wrap" FlowDirection="LeftToRight" Margin="0,0,0,6" IsVisible="False" />
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
+                    <Button x:Name="RemoteCopyButton" Content="Copy pairing link" Classes="secondary small"
+                            Click="RemoteCopyButton_Click" IsVisible="False" />
+                    <Button x:Name="RemoteNewTokenButton" Content="New pairing token" Classes="secondary small"
+                            Click="RemoteNewTokenButton_Click" />
+                </StackPanel>
+                <TextBlock x:Name="RemoteHintText" Classes="secondary" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,14" />
+
                 <Button x:Name="BrowserExtensionButton" Content="Browser extension…" Classes="secondary"
                         HorizontalAlignment="Left" Margin="0,0,0,14" Click="BrowserExtensionButton_Click" />
 

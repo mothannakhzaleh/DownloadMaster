@@ -16,6 +16,7 @@ public partial class SettingsWindow : Window
     private readonly List<LanguageOption> _languages;
     private readonly AutoStartService _autoStart;
     private readonly bool _autoStartWasEnabled;
+    private string? _newRemoteToken;
 
     public AppSettings? ResultSettings { get; private set; }
 
@@ -63,6 +64,10 @@ public partial class SettingsWindow : Window
         SchedulerStartBox.Text = s.SchedulerStartTime;
         SchedulerStopCheck.IsChecked = s.SchedulerStopEnabled;
         SchedulerStopBox.Text = s.SchedulerStopTime;
+        RemoteEnabledCheck.IsChecked = s.RemoteAccessEnabled;
+        RemoteNetworkCheck.IsChecked = s.RemoteAccessOnNetwork;
+        RemotePortBox.Text = s.RemoteAccessPort.ToString();
+        ShowRemoteStatus();
         LanguageCombo.SelectedItem = _languages.FirstOrDefault(l => l.Language == s.Language);
     }
 
@@ -90,6 +95,13 @@ public partial class SettingsWindow : Window
         SchedulerStartBox.FlowDirection = FlowDirection.LeftToRight;
         SchedulerStopBox.FlowDirection = FlowDirection.LeftToRight;
         BrowserExtensionButton.Content = _loc.Get("SettingsBrowserExtension");
+        RemoteHeader.Text = _loc.Get("SettingsRemoteHeader");
+        RemoteEnabledText.Text = _loc.Get("SettingsRemoteEnabled");
+        RemoteNetworkText.Text = _loc.Get("SettingsRemoteNetwork");
+        RemotePortLabel.Text = _loc.Get("SettingsRemotePort");
+        RemoteCopyButton.Content = _loc.Get("SettingsRemoteCopyLink");
+        RemoteNewTokenButton.Content = _loc.Get("SettingsRemoteNewToken");
+        RemoteHintText.Text = _loc.Get("SettingsRemoteHint");
         LanguageLabel.Text = _loc.Get("Language");
         SaveButton.Content = _loc.Get("Save");
         CancelButton.Content = _loc.Get("Cancel");
@@ -120,7 +132,19 @@ public partial class SettingsWindow : Window
             return;
         }
 
+        var remotePortText = RemotePortBox.Text?.Trim() ?? string.Empty;
+        if (!int.TryParse(remotePortText, out var remotePort) || remotePort is < 1024 or > 65535)
+        {
+            await Dialogs.ShowAsync(this, _loc.Get("SettingsRemoteInvalidPort"), _loc.Get("SettingsRemoteHeader"), DialogKind.Warning);
+            return;
+        }
+
         var result = Clone(_original);
+        result.RemoteAccessEnabled = RemoteEnabledCheck.IsChecked == true;
+        result.RemoteAccessOnNetwork = RemoteNetworkCheck.IsChecked == true;
+        result.RemoteAccessPort = remotePort;
+        if (_newRemoteToken is not null)
+            result.RemoteAccessToken = _newRemoteToken;
         result.DefaultSavePath = SavePathBox.Text?.Trim() ?? string.Empty;
         result.MaxConcurrentDownloads = ConcurrentCombo.SelectedIndex + 1;
         result.FileDownloadConnections = ParseConnections(FileDownloadConnectionsCombo);
@@ -158,6 +182,41 @@ public partial class SettingsWindow : Window
     }
 
     private void CancelButton_Click(object? sender, RoutedEventArgs e) => Close(false);
+
+    /// <summary>Shows whether remote access is running and its pairing link(s).</summary>
+    private void ShowRemoteStatus()
+    {
+        var app = Avalonia.Application.Current as App;
+        var links = app?.RemotePairingLinks ?? [];
+        if (app?.RemoteAccessError is { } error)
+            RemoteStatusText.Text = string.Format(_loc.Get("SettingsRemoteError"), error);
+        else if (links.Count == 0)
+            RemoteStatusText.Text = _loc.Get("SettingsRemoteOff");
+        else
+            RemoteStatusText.Text = _loc.Get(_original.RemoteAccessOnNetwork ? "SettingsRemoteRunning" : "SettingsRemoteRunningLocal");
+
+        RemoteLinkText.Text = string.Join(Environment.NewLine, links);
+        RemoteLinkText.IsVisible = links.Count > 0;
+        RemoteCopyButton.IsVisible = links.Count > 0;
+    }
+
+    private async void RemoteCopyButton_Click(object? sender, RoutedEventArgs e)
+    {
+        var links = (Avalonia.Application.Current as App)?.RemotePairingLinks ?? [];
+        if (links.Count == 0 || Clipboard is null)
+            return;
+
+        await Clipboard.SetTextAsync(links[0]);
+        RemoteStatusText.Text = _loc.Get("SettingsRemoteCopied");
+    }
+
+    private void RemoteNewTokenButton_Click(object? sender, RoutedEventArgs e)
+    {
+        _newRemoteToken = Services.Remote.RemoteSecurity.NewToken();
+        RemoteLinkText.IsVisible = false;
+        RemoteCopyButton.IsVisible = false;
+        RemoteStatusText.Text = _loc.Get("SettingsRemoteTokenChanged");
+    }
 
     private void ResetButton_Click(object? sender, RoutedEventArgs e)
     {

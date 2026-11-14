@@ -611,6 +611,7 @@ public sealed class LocalizationService
         (Localization.SpeechStrings.English, Localization.SpeechStrings.Arabic),
         (Localization.EngineStrings.English, Localization.EngineStrings.Arabic),
         (Localization.QueueStrings.English, Localization.QueueStrings.Arabic),
+        (Localization.RemoteStrings.English, Localization.RemoteStrings.Arabic),
     ];
 
     public void SetLanguage(AppLanguage language) => Current = language;
