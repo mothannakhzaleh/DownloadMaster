@@ -147,12 +147,21 @@ await Run("resume after the process is killed mid-download", async () =>
     var logBefore = server.Log.Count;
     var item = NewItem(server.Url("/crash.bin"), connections: 4, id: id, folder: folder);
     await service.DownloadAsync(item, 4, null, null, CancellationToken.None);
-    var resumedBytes = server.Log.Skip(logBefore)
+    // Work stealing splits a running range, so requests overlap and their plain sum over-counts:
+    // measure how much of what was already saved gets asked for again.
+    var resumedRanges = server.Log.Skip(logBefore)
         .Where(r => r.Path == "/crash.bin" && r.Status is 200 or 206)
-        .Sum(r => r.RangeStart is { } s && r.RangeEnd is { } e ? Math.Min(e, data.Length - 1) - s + 1 : data.Length);
+        .Select(r => r.RangeStart is { } s && r.RangeEnd is { } e ? (s, Math.Min(e, data.Length - 1)) : (0L, data.Length - 1L))
+        .ToList();
+    var savedRanges = state.Segments.Where(s => s.Downloaded > 0)
+        .Select(s => (s.Start, s.Start + s.Downloaded - 1)).ToList();
+    var resumedBytes = UnionLength(resumedRanges);
+    var refetched = UnionLength(resumedRanges.SelectMany(r => savedRanges
+        .Select(v => (Math.Max(r.Item1, v.Item1), Math.Min(r.Item2, v.Item2)))
+        .Where(x => x.Item1 <= x.Item2)));
 
     Check(await ShaFile(item.OutputPath) == Sha(data), "SHA-256 mismatch after crash resume");
-    Check(resumedBytes < data.Length - done / 2, $"resume re-downloaded {resumedBytes} bytes (saved {done})");
+    Check(refetched < done / 2, $"resume re-downloaded {refetched} of {done} saved bytes (requested {resumedBytes})");
     Check(item.DiagnosticsLog.Contains("Resuming download"), "should resume, not restart");
     Console.WriteLine($"    killed at {done * 100 / data.Length}% · resumed {resumedBytes / 1024} KB");
 });
@@ -654,6 +663,23 @@ static byte[] MakeData(int length, int seed)
 }
 
 static string Sha(byte[] data) => Convert.ToHexString(SHA256.HashData(data)).ToLowerInvariant();
+
+// Bytes covered by a set of inclusive [start, end] ranges, overlaps counted once.
+static long UnionLength(IEnumerable<(long Start, long End)> ranges)
+{
+    long total = 0, coveredTo = -1;
+    foreach (var (start, end) in ranges.OrderBy(r => r.Start))
+    {
+        var from = Math.Max(start, coveredTo + 1);
+        if (end >= from)
+        {
+            total += end - from + 1;
+            coveredTo = end;
+        }
+    }
+
+    return total;
+}
 
 static async Task<string> ShaFile(string path) => await FileChecksumService.ComputeSha256Async(path);
 
