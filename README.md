@@ -134,6 +134,40 @@ xattr -dr com.apple.quarantine /Applications/DownloadMaster.app
 
 If FFmpeg is reported missing on macOS: `brew install ffmpeg yt-dlp`.
 
+### Command line
+
+Every package includes `downloadmaster-cli` (next to the app; on PATH with the installer option or the `.deb`):
+
+```bash
+downloadmaster-cli get https://example.com/file.iso -o ~/Downloads        # download now, prints the saved path
+downloadmaster-cli get "https://www.youtube.com/watch?v=…" --quality 720p   # video pages go through yt-dlp
+downloadmaster-cli add https://example.com/file.zip                        # hand over to the running app
+downloadmaster-cli serve --network                                          # headless server + phone page
+downloadmaster-cli list                                                     # downloads of a running server
+```
+
+`get` options: `-o` folder, `-n` file name, `-c` connections, `-l` speed limit (KB/s), `-H "Cookie: …"`, `--video`,
+`--quality`, `--format`, `--sha256`, `-q`. Exit codes: `0` ok, `1` failed, `2` bad arguments, `3` app/server not
+reachable, `130` cancelled (Ctrl+C keeps the partial file). Run `downloadmaster-cli --help` for everything.
+
+The app itself also accepts the classic download-manager switches, so other programs can hand over links:
+`DownloadMaster /d <url> [/p <folder>] [/f <file name>] [/n]` (`/n` = start without the confirmation window) and
+`DownloadMaster /s` (resume all). A second launch passes them to the running instance.
+
+### Remote control (phone, other computers, headless server)
+
+- **From the desktop app:** Settings → **Remote access** → turn it on (optionally *on my home network*). Open the
+  pairing link on your phone: a page to add links and watch, pause, resume or cancel downloads.
+- **Without a desktop** (NAS, server, spare PC): `downloadmaster-cli serve --network` runs the same queue, the
+  phone page and the browser-extension bridge without a window. It prints the pairing link; `--new-token` unpairs
+  every device. Stop it with Ctrl+C or `SIGTERM` (works under systemd / Docker / launchd).
+- **Security:** off by default; every API call needs the pairing token (wrong tokens lock the client out for two
+  minutes); remote clients can only save inside the save folder and never see local paths. The connection is plain
+  HTTP, so use it on a network you trust, and keep the pairing link private.
+- **API** (`Authorization: Bearer <token>`, default port `45781`): `GET /api/v1/downloads`,
+  `POST /api/v1/downloads {url, folder?, name?, video?}`, `POST /api/v1/downloads/{id}/pause|resume|cancel`,
+  `DELETE /api/v1/downloads/{id}`, `GET /api/v1/info`.
+
 ### Requirements
 
 | | Windows | macOS | Linux |

@@ -15,12 +15,14 @@ VideoDownloader/
 │   └── release.yml                  # Tag v* → GitHub Release; push to master → "nightly" pre-release
 ├── src/
 │   ├── DownloadMaster/              # The app (see below)
+│   ├── DownloadMaster.Cli/          # downloadmaster-cli: get / add / serve / list / status (links the app's UI-free sources)
 │   └── browser-extension/           # Chrome / Edge / Brave / Opera extension (Manifest V3)
 │       ├── manifest.json · background.js · content.js · overlay.css
 │       ├── popup/                   # Extension popup (status, toggles, streams in this tab)
 │       └── icons/
 ├── tests/
 │   ├── ImageConversion.Regression/  # 39 image conversion checks
+│   ├── Cli.Regression/              # CLI, /d /p /f /n switches, remote server security + headless queue
 │   └── DownloadEngine.Regression/   # Multi-connection engine checks against a local range server
 ├── scripts/                         # .bat (Windows) and .sh (Linux / macOS)
 │   ├── setup-tools    build    run    test    publish    clean.bat    release-github.bat
@@ -55,6 +57,8 @@ src/DownloadMaster/
 │   ├── Downloads/             # DownloadManager (queue, retry), HttpFileDownloadService (multi-connection
 │   │                          # engine, dynamic splitting, resume), YtDlpService, SpeedLimiter, checksums
 │   ├── Bridge/                # LocalBridgeServer (127.0.0.1:45780), SingleInstance, request models
+│   ├── Remote/                # RemoteServer (token-paired page + API, port 45781), headless host, mini HTTP
+│   ├── CommandLine/           # LaunchOptions: /d /p /f /n /s and --url style switches
 │   ├── Queue/                 # Scheduler, finish actions, categories, batch patterns, clipboard watcher
 │   ├── Convert/               # FFmpeg video/audio, Magick.NET images, previews
 │   ├── Speech/                # Windows voices, macOS say, Linux espeak-ng / spd-say
@@ -84,6 +88,11 @@ src/DownloadMaster/
   page itself) → yt-dlp with `--add-header`, or the file engine for plain MP4.
 - **Files engine**: probe (`Range: bytes=0-0`) → N segments → finished connections split the largest remaining
   segment → state saved about every second to `file-downloads/<id>.json` → `.part` renamed when complete → SHA-256.
+- **Remote control**: `RemoteServer` (off by default, port 45781) serves the phone page and a Bearer-token API.
+  The desktop app is the host (`MainWindow.Remote.cs`, UI thread); `downloadmaster-cli serve` uses
+  `ManagerRemoteHost` (no UI) plus the same local bridge for the extension.
+- **Command line**: `downloadmaster-cli get` drives `DownloadManager` directly; `add` and the app's `/d … /n`
+  switches go through `/api/v1/activate` on the bridge (or the remote API when only a server runs).
 - **Expired links**: HTTP 403/410 keeps the `.part`; catching the same file again offers to continue it.
 
 ## Data and settings
