@@ -203,6 +203,9 @@ public partial class App : Application
                 _window?.HandleLaunch(launch);
         });
 
+        _bridge.CookiesReceived = ExtensionCookieRelay.Deliver;
+        ExtensionCookieRelay.BridgeAvailable = () => _bridge?.IsRunning == true;
+
         if (!_bridge.TryStart(out var error))
             _window?.ReportBridgeError(error);
     }

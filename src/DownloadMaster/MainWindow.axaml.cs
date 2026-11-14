@@ -1872,10 +1872,12 @@ public partial class MainWindow : Window
             var (success, error) = await InstagramBrowserCookieSync.TrySyncAsync(
                 GetSelectedInstagramBrowser(),
                 InstagramCookiesBuilder.SavedCookiesPath,
-                _loc);
+                _loc,
+                text => Dispatcher.UIThread.Post(() => InstagramCookiesStatusText.Text = text));
 
             if (!success)
             {
+                UpdateInstagramCookiesStatus();
                 await Dialogs.ShowAsync(this, error, _loc.Get("InstagramSyncCookies"), DialogKind.Warning);
                 return;
             }

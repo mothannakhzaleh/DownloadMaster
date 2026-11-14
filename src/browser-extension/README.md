@@ -36,6 +36,15 @@ The app runs a small HTTP server on `127.0.0.1:45780` (your computer only):
 | `GET /api/v1/status` | Is the app running, is interception on, which file types to catch |
 | `POST /api/v1/download` | `{ url, filename, fileSize, mimeType, referrer, userAgent, cookies, headers }` |
 | `POST /api/v1/media-stream` | `{ tabId, pageTitle, pageUrl, streamUrl, streamType, qualityLabel, cookies, userAgent, referrer }` |
+| `POST /api/v1/cookies` | `{ domain: "instagram.com", cookies: [...] }` — answer to the app's Instagram **Sync from browser** |
+
+### Instagram "Sync from browser"
+
+Chrome and Edge 127+ encrypt their cookie store so that no other program can read it, even with the
+browser closed. So the app opens `https://www.instagram.com/#downloadmaster-sync` in your browser;
+the extension sees that tab and sends **only instagram.com cookies, only to 127.0.0.1**, and only once
+you are logged in (if you log in on that tab, it sends right after). The app ignores the cookies
+unless its own Sync is waiting (2 minutes after you click it).
 
 The app only accepts browser requests from extension origins (`chrome-extension://`,
 `moz-extension://`) and only on the loopback address, so web pages can't push downloads into it.

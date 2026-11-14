@@ -265,9 +265,14 @@ public static class InstagramBrowserProfiles
         return profiles;
     }
 
-    public static void OpenLoginBrowser(InstagramBrowser browser)
+    public static bool IsChromiumFamily(InstagramBrowser browser) => !IsFirefox(browser);
+
+    public static void OpenLoginBrowser(InstagramBrowser browser) =>
+        OpenUrl(browser, "https://www.instagram.com/accounts/login/", newWindow: true);
+
+    /// <summary>Opens a URL in the chosen browser and profile (a new tab if it is already running).</summary>
+    public static void OpenUrl(InstagramBrowser browser, string url, bool newWindow = false)
     {
-        const string loginUrl = "https://www.instagram.com/accounts/login/";
         var executable = FindExecutable(browser)
             ?? throw new FileNotFoundException(
                 $"{DisplayName(browser)} was not found. Install it or choose another browser in the Instagram tab.");
@@ -275,8 +280,9 @@ public static class InstagramBrowserProfiles
         var psi = new ProcessStartInfo(executable) { UseShellExecute = false };
         if (!IsFirefox(browser))
             psi.ArgumentList.Add($"--profile-directory={ResolveProfile(browser)}");
-        psi.ArgumentList.Add("--new-window");
-        psi.ArgumentList.Add(loginUrl);
+        if (newWindow)
+            psi.ArgumentList.Add("--new-window");
+        psi.ArgumentList.Add(url);
         Process.Start(psi);
     }
 

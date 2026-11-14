@@ -10,6 +10,7 @@ using DownloadEngine.Regression;
 using DownloadMaster.Cli;
 using DownloadMaster.Models;
 using DownloadMaster.Services;
+using DownloadMaster.Services.Bridge;
 using DownloadMaster.Services.CommandLine;
 using DownloadMaster.Services.Remote;
 
@@ -189,6 +190,38 @@ await Run("wrong tokens lock the client out", async () =>
 
     Check(codes.Take(10).All(c => c == 401), $"first ten 401 ({string.Join(",", codes)})");
     Check(codes.Skip(10).All(c => c == 429), "then 429");
+});
+
+await Run("extension cookie relay (Instagram sync for Chrome/Edge)", async () =>
+{
+    var sample = new BridgeCookiesRequest
+    {
+        Domain = "instagram.com",
+        Cookies =
+        [
+            new BridgeCookie { Name = "sessionid", Value = "123%3Aabc", Domain = ".instagram.com", Path = "/", Secure = true, HttpOnly = true, ExpirationDate = 1900000000 },
+            new BridgeCookie { Name = "csrftoken", Value = "tok", Domain = ".instagram.com", Path = "/", Secure = true, ExpirationDate = 1900000000 },
+            new BridgeCookie { Name = "bad", Value = "a\tb", Domain = ".instagram.com" }
+        ]
+    };
+
+    Check(!ExtensionCookieRelay.Deliver(sample), "refused when no sync is waiting");
+    Check(await ExtensionCookieRelay.WaitAsync(TimeSpan.FromMilliseconds(100), CancellationToken.None) is null, "times out");
+
+    var wait = ExtensionCookieRelay.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
+    Check(!ExtensionCookieRelay.Deliver(new BridgeCookiesRequest { Domain = "example.com", Cookies = sample.Cookies }), "other domains refused");
+    Check(ExtensionCookieRelay.Deliver(sample), "accepted while waiting");
+    var got = await wait;
+    Check(got?.Cookies.Count == 3, "cookies handed over");
+    Check(!ExtensionCookieRelay.Deliver(sample), "only once per sync");
+
+    var text = ExtensionCookieRelay.ToNetscape(got!.Cookies);
+    Check(InstagramCookieSession.ValidateCookiesContent(text), "valid Instagram cookies.txt");
+    Check(!text.Contains("\tbad\t"), "cookies with tabs/newlines dropped");
+    var path = Path.Combine(runDir, "ig-cookies.txt");
+    await File.WriteAllTextAsync(path, text);
+    var header = InstagramCookieFileReader.BuildCookieHeader(path);
+    Check(header.Contains("sessionid=123%3Aabc") && header.Contains("csrftoken=tok"), $"http-only sessionid is readable ({header})");
 });
 
 // ---- the real CLI process ------------------------------------------------------------------

@@ -4,6 +4,28 @@
   if (window.__downloadMasterOverlay) return;
   window.__downloadMasterOverlay = true;
 
+  // "Sync from browser" in the app opens instagram.com#downloadmaster-sync: hand the login over.
+  if (window === window.top && /(^|\.)instagram\.com$/i.test(location.hostname)
+      && location.hash === '#downloadmaster-sync') {
+    history.replaceState(null, '', location.pathname + location.search);
+    chrome.runtime.sendMessage({ type: 'syncCookies' })
+      .then((r) => syncNotice(r && r.ok
+        ? (r.loggedIn ? 'Instagram login sent to DownloadMaster. You can close this tab.'
+                      : 'Log in to Instagram here; DownloadMaster picks it up automatically.')
+        : 'DownloadMaster: ' + ((r && r.error) || 'could not send the login.')))
+      .catch(() => syncNotice('DownloadMaster: could not reach the extension.'));
+  }
+
+  function syncNotice(text) {
+    const note = document.createElement('div');
+    note.textContent = text;
+    note.style.cssText = 'position:fixed;z-index:2147483647;top:16px;left:50%;transform:translateX(-50%);'
+      + 'background:#1f2430;color:#fff;font:14px system-ui,sans-serif;padding:10px 16px;border-radius:8px;'
+      + 'box-shadow:0 4px 16px rgba(0,0,0,.3)';
+    (document.body || document.documentElement).appendChild(note);
+    setTimeout(() => note.remove(), 6000);
+  }
+
   const MIN_WIDTH = 250;
   const MIN_HEIGHT = 140;
   const HIDE_DELAY_MS = 1800;

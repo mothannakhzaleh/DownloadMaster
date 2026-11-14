@@ -17,5 +17,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\DownloadMaster.Cli\DownloadMaster.Cli.csproj" />
     <Compile Include="..\DownloadEngine.Regression\RangeServer.cs" Link="Linked\RangeServer.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Bridge\ExtensionCookieRelay.cs" Link="Linked\ExtensionCookieRelay.cs" />
   </ItemGroup>
 </Project>

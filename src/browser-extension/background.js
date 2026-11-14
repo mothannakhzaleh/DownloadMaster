@@ -269,6 +269,81 @@ async function sendPage(tab, pageUrl, pageTitle) {
   });
 }
 
+// ---- 3. Instagram login for the app ("Sync from browser") -----------------------------------
+// The app opens https://www.instagram.com/#downloadmaster-sync; content.js asks for this.
+// Chrome 127+ encrypts its cookie database so other programs can't read it, but an extension with
+// the cookies permission can. Only Instagram cookies are sent, only to the app on 127.0.0.1, and the
+// app accepts them only while its own Sync is waiting.
+// If the user still has to log in, the request stays armed for a few minutes and the cookies go out
+// as soon as Instagram sets its sessionid cookie.
+const SYNC_HASH = '#downloadmaster-sync';
+const SYNC_ARM_MS = 3 * 60 * 1000;
+const isInstagramHost = (host) => /(^|\.)instagram\.com$/i.test(host || '');
+
+async function syncState() {
+  const { igSync } = await chrome.storage.session.get('igSync');
+  return igSync || { armedUntil: 0, sentAt: 0 };
+}
+
+async function armInstagramSync() {
+  const state = await syncState();
+  if (Date.now() - state.sentAt < 15000) return { ok: true, loggedIn: true }; // already sent for this click
+  await chrome.storage.session.set({ igSync: { armedUntil: Date.now() + SYNC_ARM_MS, sentAt: 0 } });
+  return trySendInstagramCookies();
+}
+
+// The tab listener, the cookie listener and content.js can all fire for one click: send once.
+let sendingCookies = null;
+function trySendInstagramCookies() {
+  sendingCookies ??= doSendInstagramCookies().finally(() => { sendingCookies = null; });
+  return sendingCookies;
+}
+
+async function doSendInstagramCookies() {
+  const state = await syncState();
+  if (Date.now() > state.armedUntil) return { ok: false, error: 'Click Sync from browser in DownloadMaster first.' };
+  if (!(await getStatus(true))) return { ok: false, error: 'DownloadMaster is not running.' };
+
+  const cookies = await chrome.cookies.getAll({ domain: 'instagram.com' });
+  if (!cookies.some((c) => c.name === 'sessionid' && c.value)) return { ok: true, loggedIn: false };
+
+  await post('/cookies', {
+    domain: 'instagram.com',
+    cookies: cookies.map((c) => ({
+      name: c.name,
+      value: c.value,
+      domain: c.domain,
+      path: c.path,
+      secure: c.secure,
+      httpOnly: c.httpOnly,
+      hostOnly: c.hostOnly,
+      expirationDate: Math.floor(c.expirationDate || 0)
+    }))
+  });
+  await chrome.storage.session.set({ igSync: { armedUntil: 0, sentAt: Date.now() } });
+  return { ok: true, loggedIn: true };
+}
+
+// The app opened instagram.com#downloadmaster-sync (seen here even if the page rewrites its URL later).
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (!changeInfo.url || !changeInfo.url.includes(SYNC_HASH)) return;
+  try {
+    if (isInstagramHost(new URL(changeInfo.url).hostname)) armInstagramSync().catch(() => {});
+  } catch {}
+});
+
+// Logged in after the tab opened → send right away.
+chrome.cookies.onChanged.addListener(({ removed, cookie }) => {
+  if (removed || cookie.name !== 'sessionid' || !isInstagramHost(cookie.domain.replace(/^\./, ''))) return;
+  trySendInstagramCookies().catch(() => {});
+});
+
+async function sendInstagramCookies(tab) {
+  const host = tab?.url ? new URL(tab.url).hostname : '';
+  if (!isInstagramHost(host)) throw new Error('Not an Instagram tab');
+  return armInstagramSync();
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   (async () => {
     const tabId = message.tabId ?? sender.tab?.id;
@@ -289,6 +364,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (!(await getStatus(true))) throw new Error('DownloadMaster is not running.');
         await sendPage(tab, message.pageUrl, message.pageTitle);
         return { ok: true };
+      case 'syncCookies':
+        return await sendInstagramCookies(tab);
       default:
         return { ok: false, error: 'Unknown message' };
     }

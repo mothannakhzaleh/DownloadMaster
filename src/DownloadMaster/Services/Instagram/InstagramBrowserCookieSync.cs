@@ -1,16 +1,70 @@
 using System.Diagnostics;
 using System.IO;
 using DownloadMaster.Models;
+using DownloadMaster.Services.Bridge;
 
 namespace DownloadMaster.Services;
 
 public static class InstagramBrowserCookieSync
 {
+    /// <summary>How long "Sync from browser" waits for the extension (includes time to log in).</summary>
+    public static readonly TimeSpan ExtensionWait = TimeSpan.FromMinutes(2);
+
     public static async Task<(bool Success, string? Error)> TrySyncAsync(
         InstagramBrowser browser,
         string outputPath,
         LocalizationService loc,
+        Action<string>? progress = null,
         CancellationToken ct = default)
+    {
+        // Chrome/Edge 127+ on Windows lock their cookies to the browser (app-bound encryption), so
+        // yt-dlp can't read them even with the browser closed. Ask the extension instead.
+        var canUseExtension = InstagramBrowserProfiles.IsChromiumFamily(browser) && ExtensionCookieRelay.BridgeAvailable();
+        if (canUseExtension && OperatingSystem.IsWindows())
+            return await SyncThroughExtensionAsync(browser, outputPath, loc, progress, ct);
+
+        var viaYtDlp = await SyncWithYtDlpAsync(browser, outputPath, loc, ct);
+        if (viaYtDlp.Success || !canUseExtension)
+            return viaYtDlp;
+
+        var viaExtension = await SyncThroughExtensionAsync(browser, outputPath, loc, progress, ct);
+        return viaExtension.Success ? viaExtension : viaYtDlp;
+    }
+
+    private static async Task<(bool Success, string? Error)> SyncThroughExtensionAsync(
+        InstagramBrowser browser,
+        string outputPath,
+        LocalizationService loc,
+        Action<string>? progress,
+        CancellationToken ct)
+    {
+        var name = InstagramBrowserProfiles.DisplayName(browser);
+
+        // Start listening before the tab opens so a fast answer isn't missed.
+        var wait = ExtensionCookieRelay.WaitAsync(ExtensionWait, ct);
+        InstagramBrowserProfiles.OpenUrl(browser, ExtensionCookieRelay.SyncUrl);
+        progress?.Invoke(string.Format(loc.Get("InstagramSyncWaitingExtension"), name));
+
+        var answer = await wait;
+        if (answer is null)
+            return (false, string.Format(loc.Get("InstagramSyncNoExtension"), name));
+
+        var content = ExtensionCookieRelay.ToNetscape(answer.Cookies);
+        if (!InstagramCookieSession.ValidateCookiesContent(content))
+            return (false, string.Format(loc.Get("InstagramSyncExtensionNoSession"), name));
+
+        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+        await File.WriteAllTextAsync(outputPath, content, ct);
+        return InstagramCookieSession.ValidateCookiesFile(outputPath)
+            ? (true, null)
+            : (false, string.Format(loc.Get("InstagramSyncExtensionNoSession"), name));
+    }
+
+    private static async Task<(bool Success, string? Error)> SyncWithYtDlpAsync(
+        InstagramBrowser browser,
+        string outputPath,
+        LocalizationService loc,
+        CancellationToken ct)
     {
         if (ToolLocator.YtDlpExecutable is null)
             return (false, loc.Get("ToolsMissingYtDlp"));

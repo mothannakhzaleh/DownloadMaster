@@ -42,6 +42,27 @@ public sealed class BridgeMediaRequest
     [JsonPropertyName("referrer")] public string? Referrer { get; set; }
 }
 
+/// <summary>One browser cookie as chrome.cookies reports it.</summary>
+public sealed class BridgeCookie
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
+    [JsonPropertyName("value")] public string Value { get; set; } = string.Empty;
+    [JsonPropertyName("domain")] public string Domain { get; set; } = string.Empty;
+    [JsonPropertyName("path")] public string Path { get; set; } = "/";
+    [JsonPropertyName("secure")] public bool Secure { get; set; }
+    [JsonPropertyName("httpOnly")] public bool HttpOnly { get; set; }
+    [JsonPropertyName("hostOnly")] public bool HostOnly { get; set; }
+    /// <summary>Unix seconds; 0 = session cookie.</summary>
+    [JsonPropertyName("expirationDate")] public long ExpirationDate { get; set; }
+}
+
+/// <summary>POST /api/v1/cookies — the extension answering the app's "Sync from browser".</summary>
+public sealed class BridgeCookiesRequest
+{
+    [JsonPropertyName("domain")] public string Domain { get; set; } = string.Empty;
+    [JsonPropertyName("cookies")] public List<BridgeCookie> Cookies { get; set; } = [];
+}
+
 /// <summary>POST /api/v1/activate — a second app instance forwarding its command line.</summary>
 public sealed class BridgeActivateRequest
 {
@@ -82,6 +103,7 @@ public static class BridgeHeaders
 [JsonSerializable(typeof(BridgeDownloadRequest))]
 [JsonSerializable(typeof(BridgeMediaRequest))]
 [JsonSerializable(typeof(BridgeActivateRequest))]
+[JsonSerializable(typeof(BridgeCookiesRequest))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
 internal sealed partial class BridgeJsonContext : JsonSerializerContext
 {

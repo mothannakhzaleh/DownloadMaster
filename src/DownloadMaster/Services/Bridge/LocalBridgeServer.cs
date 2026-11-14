@@ -27,6 +27,9 @@ public sealed class LocalBridgeServer : IDisposable
     public event Action<BridgeMediaRequest>? MediaRequested;
     public event Action<BridgeActivateRequest>? ActivateRequested;
 
+    /// <summary>Cookies from the extension; return true when the app was waiting for them.</summary>
+    public Func<BridgeCookiesRequest, bool>? CookiesReceived { get; set; }
+
     public bool IsRunning => _listener is not null;
 
     /// <summary>Last time the browser extension talked to the app (it checks /status regularly).</summary>
@@ -140,6 +143,20 @@ public sealed class LocalBridgeServer : IDisposable
                     return BridgeResponse.Error(400, "A valid http(s) streamUrl or pageUrl is required");
                 MediaRequested?.Invoke(body);
                 return BridgeResponse.Accepted();
+            }
+
+            case ("POST", "/api/v1/cookies"):
+            {
+                // Only the extension (never a plain local process or a web page) may hand over cookies,
+                // and the app ignores them unless its own "Sync from browser" is waiting.
+                if (origin is null)
+                    return BridgeResponse.Error(403, "Only the browser extension may send cookies");
+                var body = Deserialize(request, BridgeJsonContext.Default.BridgeCookiesRequest);
+                if (body is null || string.IsNullOrWhiteSpace(body.Domain))
+                    return BridgeResponse.Error(400, "Invalid body");
+                return CookiesReceived?.Invoke(body) == true
+                    ? BridgeResponse.Accepted()
+                    : BridgeResponse.Error(409, "DownloadMaster is not waiting for a login; click Sync from browser in the app");
             }
 
             case ("POST", "/api/v1/activate"):
@@ -291,6 +308,7 @@ public sealed class LocalBridgeServer : IDisposable
         400 => "Bad Request",
         403 => "Forbidden",
         404 => "Not Found",
+        409 => "Conflict",
         421 => "Misdirected Request",
         _ => "Error"
     };
