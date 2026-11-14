@@ -405,7 +405,8 @@ jobs:
           mkdir -p dist
           dpkg-deb --root-owner-group -Zxz --build "$root" "dist/$PKG_NAME.deb"
           dpkg-deb --info "dist/$PKG_NAME.deb"
-          dpkg-deb --contents "dist/$PKG_NAME.deb" | head -n 30
+          # List to a file first: piping into head can break the pipe and fail the step under pipefail.
+          dpkg-deb --contents "dist/$PKG_NAME.deb" > out/deb-list.txt && head -n 30 out/deb-list.txt
           ls -la dist
 
       - name: Package (macOS .app in .zip)
