@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.InteropServices;
 using DownloadMaster.Cli;
 
 // downloadmaster-cli — see Usage.Text or run with --help.
@@ -39,6 +40,13 @@ Console.CancelKeyPress += (_, e) =>
         cancel.Cancel();
     }
 };
+
+// Service managers (systemd, Docker, launchd) stop programs with SIGTERM: shut down the same way.
+using var sigterm = PosixSignalRegistration.Create(PosixSignal.SIGTERM, context =>
+{
+    context.Cancel = true;
+    cancel.Cancel();
+});
 
 try
 {
