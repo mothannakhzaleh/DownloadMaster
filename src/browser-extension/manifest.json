@@ -2,27 +2,64 @@
   "manifest_version": 3,
   "name": "DownloadMaster",
   "short_name": "DownloadMaster",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "description": "Send browser downloads and videos to the DownloadMaster desktop app, with cookies and headers included.",
   "homepage_url": "https://github.com/mothannakhzaleh/DownloadMaster",
   "minimum_chrome_version": "116",
-  "permissions": ["downloads", "cookies", "webRequest", "storage"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": [
+    "downloads",
+    "cookies",
+    "webRequest",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://www.instagram.com/*"
+      ],
+      "js": [
+        "instagram-parse.js",
+        "instagram-hook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://www.instagram.com/*"
+      ],
+      "js": [
+        "instagram.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle",
       "all_frames": true
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["overlay.css"],
-      "matches": ["http://*/*", "https://*/*"]
+      "resources": [
+        "overlay.css"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
     }
   ],
   "action": {

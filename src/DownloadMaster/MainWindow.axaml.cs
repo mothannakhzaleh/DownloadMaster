@@ -11,6 +11,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using DownloadMaster.Models;
 using DownloadMaster.Services;
+using DownloadMaster.Services.Bridge;
 using DownloadMaster.Services.Queue;
 using DownloadMaster.Services.Ui;
 
@@ -1592,6 +1593,13 @@ public partial class MainWindow : Window
 
     private async Task EnqueueInstagramBrowseItemAsync(InstagramBrowseItem browseItem, InstagramCookieSession session)
     {
+        if (browseItem.DirectMedia is { Count: > 0 } files)
+        {
+            foreach (var file in files)
+                await AddInstagramDirectFileAsync(file);
+            return;
+        }
+
         var normalized = InstagramUrlHelper.NormalizeDetailed(browseItem.Url);
         await EnqueueInstagramUrlAsync(
             normalized,
@@ -1728,6 +1736,10 @@ public partial class MainWindow : Window
             InstagramPreviewText.Text = _loc.Get("Fetching");
 
             var normalized = InstagramUrlHelper.NormalizeDetailed(InstagramUrlBox.Text);
+            if (CanCollectThroughExtension(normalized.Url, out var collectUser, out var collectCode)
+                && await FetchThroughExtensionAsync(collectUser, collectCode))
+                return;
+
             session = RequireInstagramSession();
 
             if (InstagramUrlHelper.IsProfileHomeUrl(normalized.Url))
@@ -1771,6 +1783,144 @@ public partial class MainWindow : Window
         }
     }
 
+    private static readonly TimeSpan CollectStartTimeout = TimeSpan.FromSeconds(25);
+    private static readonly TimeSpan CollectIdleTimeout = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan CollectTotalTimeout = TimeSpan.FromMinutes(15);
+
+    /// <summary>
+    /// Instagram no longer answers the requests the app used to make for a profile. When the bridge is
+    /// running and the chosen browser can run the DownloadMaster extension, the extension reads the
+    /// profile (or post) from Instagram's own page in that browser instead.
+    /// </summary>
+    private bool CanCollectThroughExtension(string url, out string? username, out string? code)
+    {
+        username = null;
+        code = null;
+        if (!ExtensionCookieRelay.BridgeAvailable()
+            || !InstagramBrowserProfiles.IsChromiumFamily(GetSelectedInstagramBrowser()))
+            return false;
+
+        if (InstagramUrlHelper.TryGetUsername(url, out var user) && !string.IsNullOrWhiteSpace(user))
+        {
+            username = user.Trim().TrimStart('@');
+            return true;
+        }
+
+        if (InstagramUrlHelper.IsPostUrl(url) && InstagramShortcodeHelper.TryGetShortcodeFromUrl(url, out var shortcode)
+            && shortcode.All(ch => char.IsAsciiLetterOrDigit(ch) || ch is '_' or '-'))
+        {
+            code = shortcode;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Reads the profile or post through the extension and shows the list. False when the extension
+    /// never answered for a single post: the caller then tries the older yt-dlp way.
+    /// </summary>
+    private async Task<bool> FetchThroughExtensionAsync(string? username, string? code)
+    {
+        var browser = GetSelectedInstagramBrowser();
+        var browserName = InstagramBrowserProfiles.DisplayName(browser);
+        var target = username is not null ? "@" + username : code!;
+
+        using var collect = InstagramCollectRelay.Begin();
+        var builder = new InstagramExtensionCollect(username, code);
+        var page = username is not null
+            ? $"https://www.instagram.com/{Uri.EscapeDataString(username)}/"
+            : $"https://www.instagram.com/p/{code}/";
+        InstagramBrowserProfiles.OpenUrl(browser, $"{page}#downloadmaster-collect={collect.Nonce}");
+        InstagramPreviewText.Text = string.Format(_loc.Get("InstagramCollectWaiting"), target, browserName);
+
+        var started = DateTime.UtcNow;
+        var heard = false;
+        while (!builder.Done)
+        {
+            var now = DateTime.UtcNow;
+            var wait = heard ? CollectIdleTimeout : CollectStartTimeout;
+            var left = started + CollectTotalTimeout - now;
+            if (left <= TimeSpan.Zero)
+                break;
+
+            using var timeout = new CancellationTokenSource(wait < left ? wait : left);
+            try
+            {
+                if (!await collect.Batches.WaitToReadAsync(timeout.Token))
+                    break;
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+
+            while (collect.Batches.TryRead(out var batch))
+            {
+                heard = true;
+                builder.Add(batch);
+            }
+
+            InstagramPreviewText.Text = string.Format(
+                _loc.Get(builder.TabHidden ? "InstagramCollectHidden" : "InstagramCollectProgress"), target, browserName, builder.ItemCount);
+        }
+
+        if (!heard && code is not null)
+        {
+            InstagramPreviewText.Text = _loc.Get("Fetching");
+            return false;
+        }
+
+        if (!heard)
+        {
+            var reported = ExtensionCookieRelay.ExtensionVersion();
+            var message = Version.TryParse(reported, out var version) && version < InstagramCollectRelay.MinExtensionVersion
+                ? string.Format(_loc.Get("InstagramCollectOldExtension"), browserName, reported, InstagramCollectRelay.MinExtensionVersion)
+                : string.Format(_loc.Get("InstagramCollectNoExtension"), browserName, InstagramCollectRelay.MinExtensionVersion);
+            InstagramPreviewText.IsVisible = false;
+            await Dialogs.ShowAsync(this, message, _loc.Get("Fetch"), DialogKind.Warning);
+            return true;
+        }
+
+        if (builder.ItemCount == 0)
+        {
+            InstagramPreviewText.IsVisible = false;
+            await Dialogs.ShowAsync(this, string.Format(_loc.Get("InstagramCollectNothing"), browserName), _loc.Get("Fetch"), DialogKind.Warning);
+            return true;
+        }
+
+        // The files come straight from Instagram's CDN; the session only feeds thumbnails and the
+        // download handlers, so it may have no cookies at all.
+        var session = InstagramCookieSession.Create(_settings.Current.InstagramCookiesPath);
+        session.DetachTempDirectory();
+        ShowInstagramBrowse(builder.BuildSections(_loc.Get), session, username ?? code!);
+        if (username is not null && (!builder.Done || builder.Partial))
+            InstagramPreviewText.Text += Environment.NewLine + Environment.NewLine + _loc.Get("InstagramCollectPartial");
+        return true;
+    }
+
+    private async Task AddInstagramDirectFileAsync(InstagramDirectMedia media)
+    {
+        var folder = GetSaveFolder();
+        Directory.CreateDirectory(folder);
+
+        var item = new DownloadItem
+        {
+            Url = media.Url,
+            Kind = DownloadKind.DirectFile,
+            Title = media.FileName,
+            DesiredFileName = media.FileName,
+            ConnectionCount = media.IsVideo ? _settings.Current.FileDownloadConnections : 1,
+            SaveFolder = folder,
+            ConvertWebpToPng = !media.IsVideo
+        };
+
+        _items.Insert(0, item);
+        AttachItemHandlers(item);
+        UpdateQueueEmptyState();
+        await StartOrScheduleAsync(item);
+    }
+
     private async void InstagramDownloadButton_Click(object? sender, RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(InstagramUrlBox.Text) && _instagramBrowseItems.Count == 0) return;
@@ -1788,6 +1938,20 @@ public partial class MainWindow : Window
             }
 
             var normalized = InstagramUrlHelper.NormalizeDetailed(InstagramUrlBox.Text ?? string.Empty);
+            if (CanCollectThroughExtension(normalized.Url, out var collectUser, out var collectCode))
+            {
+                ClearInstagramBrowse();
+                InstagramPreviewText.IsVisible = true;
+                InstagramPreviewText.Text = _loc.Get("Fetching");
+                if (await FetchThroughExtensionAsync(collectUser, collectCode))
+                {
+                    if (_instagramBrowseItems.Count > 0 && _instagramBrowseSession is not null)
+                        await EnqueueInstagramUrlsAsync(_instagramBrowseItems.Where(x => x.Selected), _instagramBrowseSession);
+                    UpdateQueueEmptyState();
+                    return;
+                }
+            }
+
             session = RequireInstagramSession();
             var mediaPk = TryResolveBrowseMediaPk(normalized.Url);
             await EnqueueInstagramUrlAsync(normalized, session, mediaPk);

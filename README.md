@@ -68,6 +68,7 @@ Screenshots are generated from the real app by [`scripts/screenshots.ps1`](scrip
 
 ### Instagram
 - Download a **post / reel / story** link, or browse a **profile** (stories, highlights, posts) with thumbnails
+- With the browser extension (2.1.0+) in Chrome / Edge / Brave, **Fetch** reads the profile from Instagram's own page in your logged-in browser (Instagram no longer answers the app directly); keep that tab visible while it reads. Opening the stories can show you as a viewer
 - Carousel & highlight rows — one item or the whole batch
 - Cookies: sync from Chrome / Edge / Brave / Firefox / Chromium, paste from DevTools, or clear
 

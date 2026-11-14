@@ -87,12 +87,13 @@ jobs:
         if: hashFiles('tests/DownloadEngine.Regression/*.csproj') != ''
         run: dotnet run --project tests/DownloadEngine.Regression -c Release
 
-      - name: Check browser extension (syntax + manifest)
+      - name: Check browser extension (syntax, Instagram parser tests, manifest)
         if: runner.os == 'Linux'
         run: |
-          for f in src/browser-extension/background.js src/browser-extension/content.js src/browser-extension/popup/popup.js; do
+          for f in src/browser-extension/*.js src/browser-extension/popup/popup.js; do
             node --check "$f"
           done
+          node --test tests/extension/instagram-parse.test.js
           python3 -c "import json; m = json.load(open('src/browser-extension/manifest.json')); assert m['manifest_version'] == 3"
 
       - name: Publish framework-dependent build

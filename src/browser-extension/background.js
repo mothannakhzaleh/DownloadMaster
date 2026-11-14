@@ -373,6 +373,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return { ok: true };
       case 'syncCookies':
         return await sendInstagramCookies(tab);
+      case 'igCollect': {
+        // instagram.js forwarding what Instagram's page loaded; the app answers 409 when it isn't
+        // waiting for this nonce, which stops the collection in that tab.
+        if (!sender.tab || !/^https:\/\/www\.instagram\.com\//.test(sender.tab.url || '')) {
+          return { ok: false, error: 'Not an Instagram tab' };
+        }
+        try {
+          await post('/instagram/collect', message.payload);
+          return { ok: true };
+        } catch (error) {
+          return { ok: false, error: String(error?.message || error) };
+        }
+      }
       default:
         return { ok: false, error: 'Unknown message' };
     }

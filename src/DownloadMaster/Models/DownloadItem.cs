@@ -43,6 +43,8 @@ public sealed class DownloadItem : INotifyPropertyChanged
     public string SaveFolder { get; init; } = string.Empty;
     public string? DesiredFileName { get; init; }
     public int ConnectionCount { get; init; } = 8;
+    /// <summary>A direct file that is a WebP image (Instagram): saved as PNG once downloaded.</summary>
+    public bool ConvertWebpToPng { get; init; }
     /// <summary>
     /// Headers captured by the browser extension (Cookie, Referer, User-Agent, Authorization...).
     /// Sent with every request for this item; kept in memory only. Replaced on address refresh.

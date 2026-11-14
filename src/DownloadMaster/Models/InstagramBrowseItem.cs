@@ -11,6 +11,9 @@ public sealed class InstagramBrowseSection
     public List<InstagramBrowseItem> Items { get; init; } = [];
 }
 
+/// <summary>One file on Instagram's CDN and the name to save it under (images arrive as WebP).</summary>
+public sealed record InstagramDirectMedia(string Url, bool IsVideo, string FileName);
+
 public sealed class InstagramBrowseItem : INotifyPropertyChanged
 {
     private bool _selected = true;
@@ -24,6 +27,12 @@ public sealed class InstagramBrowseItem : INotifyPropertyChanged
     public string? ThumbnailUrl { get; set; }
     public int? HighlightStoryIndex { get; init; }
     public int? CarouselSlideIndex { get; set; }
+
+    /// <summary>
+    /// Files read from Instagram's page by the browser extension: downloaded straight from Instagram's
+    /// CDN instead of through yt-dlp. A carousel or highlight "all" item lists every file.
+    /// </summary>
+    public IReadOnlyList<InstagramDirectMedia>? DirectMedia { get; init; }
 
     public bool Selected
     {

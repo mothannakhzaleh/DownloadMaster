@@ -314,10 +314,16 @@ public sealed class DownloadManager
     /// the file to itself): SHA-256 → antivirus scan → extract archive (→ delete it). A threat skips
     /// extraction. Results go to the item's ScanNote / ArchiveNote; nothing here fails the download.
     /// </summary>
+    /// <summary>WebP → PNG converter (input, output); set by the app, which has FFmpeg/ImageMagick.</summary>
+    public static Func<string, string, CancellationToken, Task>? ConvertImageToPng { get; set; }
+
     private async Task PostProcessFileAsync(DownloadItem item)
     {
         try
         {
+            if (item.ConvertWebpToPng)
+                await ConvertWebpToPngAsync(item);
+
             if (ComputeChecksums)
                 await FileChecksumService.ApplySha256Async(item);
 
@@ -336,6 +342,35 @@ public sealed class DownloadManager
         catch (Exception ex)
         {
             item.AppendDiagnostic($"After-download step failed: {ex.Message}");
+        }
+    }
+
+    private static async Task ConvertWebpToPngAsync(DownloadItem item)
+    {
+        var path = item.OutputPath;
+        var convert = ConvertImageToPng;
+        if (convert is null || string.IsNullOrWhiteSpace(path) || !File.Exists(path)
+            || !string.Equals(Path.GetExtension(path), ".webp", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var png = Path.ChangeExtension(path, ".png");
+        for (var n = 2; File.Exists(png); n++)
+            png = Path.Combine(Path.GetDirectoryName(path)!, $"{Path.GetFileNameWithoutExtension(path)} ({n}).png");
+
+        try
+        {
+            await convert(path, png, CancellationToken.None);
+            if (!File.Exists(png) || new FileInfo(png).Length == 0)
+                throw new IOException("no PNG was written");
+
+            File.Delete(path);
+            item.OutputPath = png;
+            item.AppendDiagnostic($"Saved as PNG: {png}");
+        }
+        catch (Exception ex)
+        {
+            try { if (File.Exists(png)) File.Delete(png); } catch { }
+            item.AppendDiagnostic($"Kept the WebP image, PNG conversion failed: {ex.Message}");
         }
     }
 

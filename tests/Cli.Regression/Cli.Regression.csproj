@@ -18,5 +18,8 @@
     <ProjectReference Include="..\..\src\DownloadMaster.Cli\DownloadMaster.Cli.csproj" />
     <Compile Include="..\DownloadEngine.Regression\RangeServer.cs" Link="Linked\RangeServer.cs" />
     <Compile Include="..\..\src\DownloadMaster\Services\Bridge\ExtensionCookieRelay.cs" Link="Linked\ExtensionCookieRelay.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Bridge\InstagramCollectRelay.cs" Link="Linked\InstagramCollectRelay.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Instagram\InstagramExtensionCollect.cs" Link="Linked\InstagramExtensionCollect.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Models\InstagramBrowseItem.cs" Link="Linked\InstagramBrowseItem.cs" />
   </ItemGroup>
 </Project>

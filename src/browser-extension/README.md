@@ -37,6 +37,7 @@ The app runs a small HTTP server on `127.0.0.1:45780` (your computer only):
 | `POST /api/v1/download` | `{ url, filename, fileSize, mimeType, referrer, userAgent, cookies, headers }` |
 | `POST /api/v1/media-stream` | `{ tabId, pageTitle, pageUrl, streamUrl, streamType, qualityLabel, cookies, userAgent, referrer }` |
 | `POST /api/v1/cookies` | `{ domain: "instagram.com", cookies: [...] }` — answer to the app's Instagram **Sync from browser** |
+| `POST /api/v1/instagram/collect` | `{ nonce, phase, items: [...], highlights: [...], done, partial, hidden }` — the app's Instagram **Fetch** |
 
 ### Instagram "Sync from browser"
 
@@ -45,6 +46,24 @@ browser closed. So the app opens `https://www.instagram.com/#downloadmaster-sync
 the extension sees that tab and sends **only instagram.com cookies, only to 127.0.0.1**, and only once
 you are logged in (if you log in on that tab, it sends right after). The app ignores the cookies
 unless its own Sync is waiting (2 minutes after you click it).
+
+### Instagram Fetch (profiles and posts)
+
+Instagram no longer answers the requests a desktop program can make for a profile, so the app lets
+Instagram's own page do it in your browser. **Fetch** opens
+`https://www.instagram.com/<user or post>/#downloadmaster-collect=<one-time code>`:
+
+- `instagram-hook.js` (runs in the page's own world) and `instagram-parse.js` read the posts, reels,
+  stories and highlights out of the responses Instagram's page receives — only while that tab is
+  collecting for the app.
+- `instagram.js` scrolls the post grid, opens the account's stories and each highlight, then goes
+  back to the profile, and sends what was found to the app in batches. The first batch carries the
+  code; the app refuses anything else (409) and the tab stops.
+- The app keeps only files on Instagram's CDN (`*.cdninstagram.com`, `*.fbcdn.net`, https) of that
+  account, and downloads them straight from there (photos are saved as PNG).
+
+Keep the tab visible while it reads: Instagram doesn't load more posts in a hidden or covered tab.
+Opening the stories this way can show you as a viewer, the same as opening them yourself.
 
 The app only accepts browser requests from extension origins (`chrome-extension://`,
 `moz-extension://`) and only on the loopback address, so web pages can't push downloads into it.

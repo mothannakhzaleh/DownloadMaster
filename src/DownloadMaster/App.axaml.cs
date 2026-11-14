@@ -227,6 +227,8 @@ public partial class App : Application
         _bridge.CookiesReceived = ExtensionCookieRelay.Deliver;
         ExtensionCookieRelay.BridgeAvailable = () => _bridge?.IsRunning == true;
         ExtensionCookieRelay.ExtensionVersion = () => _bridge?.ExtensionVersion;
+        _bridge.InstagramCollectReceived = InstagramCollectRelay.Deliver;
+        DownloadManager.ConvertImageToPng = InstagramImageSaveHelper.SaveFileAsPngAsync;
 
         if (!_bridge.TryStart(out var error))
             _window?.ReportBridgeError(error);

@@ -30,6 +30,9 @@ public sealed class LocalBridgeServer : IDisposable
     /// <summary>Cookies from the extension; return true when the app was waiting for them.</summary>
     public Func<BridgeCookiesRequest, bool>? CookiesReceived { get; set; }
 
+    /// <summary>Instagram media from the extension; return true when that collection is still wanted.</summary>
+    public Func<BridgeInstagramCollectRequest, bool>? InstagramCollectReceived { get; set; }
+
     public bool IsRunning => _listener is not null;
 
     /// <summary>Last time the browser extension talked to the app (it checks /status regularly).</summary>
@@ -162,6 +165,18 @@ public sealed class LocalBridgeServer : IDisposable
                 return CookiesReceived?.Invoke(body) == true
                     ? BridgeResponse.Accepted()
                     : BridgeResponse.Error(409, "DownloadMaster is not waiting for a login; click Sync from browser in the app");
+            }
+
+            case ("POST", "/api/v1/instagram/collect"):
+            {
+                if (origin is null)
+                    return BridgeResponse.Error(403, "Only the browser extension may send Instagram data");
+                var body = Deserialize(request, BridgeJsonContext.Default.BridgeInstagramCollectRequest);
+                if (body is null || string.IsNullOrWhiteSpace(body.Nonce))
+                    return BridgeResponse.Error(400, "Invalid body");
+                return InstagramCollectReceived?.Invoke(body) == true
+                    ? BridgeResponse.Accepted()
+                    : BridgeResponse.Error(409, "DownloadMaster is not reading this Instagram page");
             }
 
             case ("POST", "/api/v1/activate"):

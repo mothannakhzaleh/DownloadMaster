@@ -279,6 +279,133 @@ await Run("bridge /api/v1/cookies route", async () =>
     Check(got?.Cookies is [{ Name: "sessionid", Value: "42%3Axyz", HttpOnly: true, ExpirationDate: 1900000000 }], "parsed cookie");
 });
 
+await Run("bridge /api/v1/instagram/collect route", async () =>
+{
+    using var bridge = new LocalBridgeServer(() => new BridgeStatus());
+    bridge.InstagramCollectReceived = InstagramCollectRelay.Deliver;
+    if (!bridge.TryStart(out var error))
+    {
+        Console.WriteLine($"       (skipped: {error})");
+        return;
+    }
+
+    using var http = new HttpClient();
+    async Task<int> Post(string body, string? origin)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"http://127.0.0.1:{LocalBridgeServer.Port}/api/v1/instagram/collect")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        if (origin is not null)
+            request.Headers.Add("Origin", origin);
+        using var response = await http.SendAsync(request);
+        return (int)response.StatusCode;
+    }
+
+    string Batch(string nonce) =>
+        $$"""{"nonce":"{{nonce}}","phase":"posts","items":[{"section":"posts","code":"AbC_1","pk":"1001","takenAt":1700000000,"username":"sample","thumbnail":"https://a.cdninstagram.com/t.webp","media":[{"type":"image","url":"https://a.cdninstagram.com/p.webp","width":1080,"height":1350}]}],"highlights":[{"id":"555","title":"Trips"}]}""";
+
+    Check(await Post(Batch("abc"), null) == 403, "a plain local process may not send Instagram data");
+    Check(await Post(Batch("abc"), "https://evil.example") == 403, "a web page may not send Instagram data");
+    Check(await Post(Batch("abc"), "chrome-extension://abc") == 409, "refused while no Fetch waits");
+    Check(await Post("{\"phase\":\"posts\"}", "chrome-extension://abc") == 400, "a batch without a nonce is invalid");
+
+    using (var collect = InstagramCollectRelay.Begin())
+    {
+        Check(await Post(Batch("wrong"), "chrome-extension://abc") == 409, "another nonce is refused");
+        Check(await Post(Batch(collect.Nonce), "chrome-extension://abc") == 202, "the waiting Fetch's nonce is accepted");
+        Check(collect.Batches.TryRead(out var got) && got.Items is [{ Code: "AbC_1", Media: [{ Width: 1080 }] }] && got.Highlights is [{ Id: "555" }],
+            "batch parsed");
+
+        using var newer = InstagramCollectRelay.Begin();
+        Check(await Post(Batch(collect.Nonce), "chrome-extension://abc") == 409, "a replaced Fetch's nonce is refused");
+    }
+});
+
+await Run("Instagram extension collect builds sections, CDN files only", () =>
+{
+    static BridgeInstagramMedia Img(string url) => new() { Type = "image", Url = url, Width = 1080, Height = 1350 };
+    static BridgeInstagramMedia Vid(string url) => new() { Type = "video", Url = url, Width = 720, Height = 1280 };
+    const string Cdn = "https://scontent.cdninstagram.com/v/";
+
+    var collect = new InstagramExtensionCollect("Sample");
+    collect.Add(new BridgeInstagramCollectRequest
+    {
+        Nonce = "n",
+        Highlights = [new() { Id = "555", Title = "Trips" }, new() { Id = "not-a-number" }],
+        Items =
+        [
+            new() { Section = "posts", Code = "Photo1", Pk = "1", TakenAt = 1700000000, Username = "sample", Media = [Img(Cdn + "1.webp")] },
+            new() { Section = "posts", Code = "Reel2", Pk = "2", TakenAt = 1700000500, Username = "sample", Media = [Vid(Cdn + "2.mp4")] },
+            new() { Section = "posts", Code = "Car3", Pk = "3", TakenAt = 1700000900, Username = "sample", Media = [Img(Cdn + "3a.webp"), Vid("https://video.xx.fbcdn.net/3b.mp4")] },
+            new() { Section = "posts", Code = "Other", Pk = "4", Username = "someone.else", Media = [Img(Cdn + "4.webp")] },
+            new() { Section = "posts", Code = "Evil", Pk = "5", Username = "sample", Media = [Img("https://evil.example/5.webp"), Img("http://a.cdninstagram.com/5.webp")] },
+            new() { Section = "stories", Pk = "6", TakenAt = 1700001000, Username = "sample", Media = [Vid(Cdn + "6.mp4")] },
+            new() { Section = "highlight:555", Pk = "7", Username = "sample", Media = [Img(Cdn + "7.webp")] },
+            new() { Section = "highlight:555", Pk = "8", Username = "sample", Media = [Img(Cdn + "8.webp")] },
+            new() { Section = "../../etc", Pk = "9", Media = [Img(Cdn + "9.webp")] }
+        ]
+    });
+    // The same carousel again, now complete: replaces the first copy instead of adding one.
+    var added = collect.Add(new BridgeInstagramCollectRequest
+    {
+        Nonce = "n",
+        Done = true,
+        Items = [new() { Section = "posts", Code = "Car3", Pk = "3", TakenAt = 1700000900, Username = "sample", Media = [Img(Cdn + "3a.webp"), Vid("https://video.xx.fbcdn.net/3b.mp4"), Img(Cdn + "3c.webp")] }]
+    });
+
+    Check(added == 0 && collect.Done, "repeat item merged, done seen");
+    Check(collect.ItemCount == 6, $"other accounts, non-CDN files and bad sections dropped ({collect.ItemCount})");
+
+    var sections = collect.BuildSections(key => key switch
+    {
+        "InstagramHighlightSection" => "Highlight: {0}",
+        "InstagramStoryItem" => "Story · {0}",
+        "InstagramPostItem" => "{0} · {1}",
+        "InstagramCarouselBatch" => "{0} · All ({1})",
+        "InstagramCarouselSlideItem" => "{0} · {1}/{2} · {3}",
+        "InstagramHighlightStoryItem" => "{0}/{1} · {2}",
+        _ => key
+    });
+    Check(string.Join(",", sections.Select(s => s.Key)) == "stories,highlight-555,posts", "section order");
+
+    var posts = sections.Single(s => s.Key == "posts").Items;
+    Check(string.Join(",", posts.Select(i => i.Kind)) == "carousel,carousel-slide,carousel-slide,carousel-slide,reel,post", "newest first, carousel grouped");
+    Check(posts[0].DirectMedia is { Count: 3 } && posts[0].Url == "https://www.instagram.com/p/Car3/", "carousel lists every file");
+    Check(posts[1].DirectMedia is [{ FileName: "sample_Car3_1.webp", IsVideo: false }] && posts[2].DirectMedia is [{ FileName: "sample_Car3_2.mp4", IsVideo: true }],
+        "slide files named per slide");
+    Check(posts.Take(4).All(i => i.Url == "https://www.instagram.com/p/Car3/"), "slides share the post URL");
+    Check(posts[5].DirectMedia is [{ FileName: "sample_Photo1.webp" }], "single photo name");
+
+    var highlight = sections.Single(s => s.Key == "highlight-555");
+    Check(highlight.Title == "Highlight: Trips" && highlight.BatchUrl is null, "highlight title, no yt-dlp batch URL");
+    Check(highlight.Items is [{ Kind: "highlight", HighlightStoryIndex: null, DirectMedia.Count: 2 }, { Kind: "highlight-story", HighlightStoryIndex: 1 }, { Kind: "highlight-story", HighlightStoryIndex: 2 }],
+        "highlight batch + stories");
+    Check(highlight.Items[1].DirectMedia is [{ FileName: "Sample_Trips_7.webp" }], $"highlight file name ({highlight.Items[1].DirectMedia?[0].FileName})");
+
+    var stories = sections.Single(s => s.Key == "stories").Items;
+    Check(stories is [{ Kind: "story", DirectMedia: [{ FileName: "Sample_story_6.mp4", IsVideo: true }] }], "story");
+
+    var single = new InstagramExtensionCollect(null, "Photo1");
+    single.Add(new BridgeInstagramCollectRequest
+    {
+        Nonce = "n",
+        Items =
+        [
+            new() { Section = "posts", Code = "Photo1", Pk = "1", Username = "sample", Media = [Img(Cdn + "1.webp")] },
+            new() { Section = "posts", Code = "Suggested", Pk = "10", Username = "other", Media = [Img(Cdn + "10.webp")] }
+        ]
+    });
+    Check(single.ItemCount == 1, "a single post keeps only that post");
+
+    Check(InstagramExtensionCollect.SafeFileName("a<b>:c/d\\e|f?g*h\"i") == "a_b__c_d_e_f_g_h_i", "file name sanitized");
+    Check(!InstagramExtensionCollect.IsAllowedMediaUrl("https://cdninstagram.com.evil.example/x")
+        && !InstagramExtensionCollect.IsAllowedMediaUrl("https://user@a.cdninstagram.com/x")
+        && !InstagramExtensionCollect.IsAllowedMediaUrl("https://a.cdninstagram.com:8443/x")
+        && InstagramExtensionCollect.IsAllowedMediaUrl("https://video-xx1-1.xx.fbcdn.net/o1/v.mp4"), "CDN host check");
+    return Task.CompletedTask;
+});
+
 // ---- the real CLI process ------------------------------------------------------------------
 
 await Run("downloadmaster-cli get downloads and prints the path", async () =>

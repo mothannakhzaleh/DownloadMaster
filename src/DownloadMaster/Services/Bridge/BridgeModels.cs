@@ -63,6 +63,52 @@ public sealed class BridgeCookiesRequest
     [JsonPropertyName("cookies")] public List<BridgeCookie> Cookies { get; set; } = [];
 }
 
+/// <summary>One file of an Instagram item (a carousel has several).</summary>
+public sealed class BridgeInstagramMedia
+{
+    [JsonPropertyName("type")] public string Type { get; set; } = "image";
+    [JsonPropertyName("url")] public string Url { get; set; } = string.Empty;
+    [JsonPropertyName("width")] public int Width { get; set; }
+    [JsonPropertyName("height")] public int Height { get; set; }
+}
+
+/// <summary>A post, reel, story or highlight story read from Instagram's page by the extension.</summary>
+public sealed class BridgeInstagramItem
+{
+    /// <summary>posts, stories, or highlight:&lt;id&gt;.</summary>
+    [JsonPropertyName("section")] public string Section { get; set; } = "posts";
+    [JsonPropertyName("sectionTitle")] public string? SectionTitle { get; set; }
+    [JsonPropertyName("code")] public string? Code { get; set; }
+    [JsonPropertyName("pk")] public string? Pk { get; set; }
+    [JsonPropertyName("takenAt")] public long TakenAt { get; set; }
+    [JsonPropertyName("productType")] public string? ProductType { get; set; }
+    [JsonPropertyName("username")] public string? Username { get; set; }
+    [JsonPropertyName("thumbnail")] public string? Thumbnail { get; set; }
+    [JsonPropertyName("media")] public List<BridgeInstagramMedia> Media { get; set; } = [];
+}
+
+public sealed class BridgeInstagramHighlight
+{
+    [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
+    [JsonPropertyName("title")] public string? Title { get; set; }
+}
+
+/// <summary>POST /api/v1/instagram/collect — a batch from the extension's Instagram collection.</summary>
+public sealed class BridgeInstagramCollectRequest
+{
+    [JsonPropertyName("nonce")] public string Nonce { get; set; } = string.Empty;
+    /// <summary>hello, posts, stories, highlights, single, done.</summary>
+    [JsonPropertyName("phase")] public string? Phase { get; set; }
+    [JsonPropertyName("url")] public string? Url { get; set; }
+    [JsonPropertyName("done")] public bool Done { get; set; }
+    /// <summary>Done, but the posts stopped before the end (a limit, or Instagram stopped loading).</summary>
+    [JsonPropertyName("partial")] public bool Partial { get; set; }
+    /// <summary>The Instagram tab is hidden or covered, so Instagram is not loading more.</summary>
+    [JsonPropertyName("hidden")] public bool Hidden { get; set; }
+    [JsonPropertyName("items")] public List<BridgeInstagramItem> Items { get; set; } = [];
+    [JsonPropertyName("highlights")] public List<BridgeInstagramHighlight> Highlights { get; set; } = [];
+}
+
 /// <summary>POST /api/v1/activate — a second app instance forwarding its command line.</summary>
 public sealed class BridgeActivateRequest
 {
@@ -104,6 +150,7 @@ public static class BridgeHeaders
 [JsonSerializable(typeof(BridgeMediaRequest))]
 [JsonSerializable(typeof(BridgeActivateRequest))]
 [JsonSerializable(typeof(BridgeCookiesRequest))]
+[JsonSerializable(typeof(BridgeInstagramCollectRequest))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
 internal sealed partial class BridgeJsonContext : JsonSerializerContext
 {
