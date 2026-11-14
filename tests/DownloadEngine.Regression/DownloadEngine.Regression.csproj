@@ -35,5 +35,9 @@
     <Compile Include="..\..\src\DownloadMaster\Services\FormatHelpers.cs" Link="Linked\FormatHelpers.cs" />
     <Compile Include="..\..\src\DownloadMaster\Services\Downloads\HttpFileDownloadService.cs" Link="Linked\HttpFileDownloadService.cs" />
     <Compile Include="..\..\src\DownloadMaster\Services\Downloads\SpeedLimiter.cs" Link="Linked\SpeedLimiter.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Downloads\ArchiveExtractor.cs" Link="Linked\ArchiveExtractor.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Downloads\AntivirusScanner.cs" Link="Linked\AntivirusScanner.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\Downloads\ExternalToolRunner.cs" Link="Linked\ExternalToolRunner.cs" />
+    <Compile Include="..\..\src\DownloadMaster\Services\ToolLocator.cs" Link="Linked\ToolLocator.cs" />
   </ItemGroup>
 </Project>

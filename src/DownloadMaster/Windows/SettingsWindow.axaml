@@ -42,6 +42,19 @@
                                Text="Sort downloads into category folders" />
                 </CheckBox>
 
+                <TextBlock x:Name="AfterDownloadHeader" Text="When a file download finishes" FontWeight="SemiBold" Margin="0,4,0,6" />
+                <CheckBox x:Name="ExtractArchivesCheck" Margin="0,0,0,8">
+                    <TextBlock x:Name="ExtractArchivesText" TextWrapping="Wrap"
+                               Text="Extract archives (zip, 7z, rar, tar) into a folder next to the file" />
+                </CheckBox>
+                <CheckBox x:Name="DeleteArchiveCheck" Content="Delete the archive after a successful extraction" Margin="28,0,0,8"
+                          IsEnabled="{Binding #ExtractArchivesCheck.IsChecked}" />
+                <CheckBox x:Name="ScanAntivirusCheck" Margin="0,0,0,6">
+                    <TextBlock x:Name="ScanAntivirusText" TextWrapping="Wrap"
+                               Text="Scan the file with the antivirus (Windows Defender; ClamAV on macOS / Linux)" />
+                </CheckBox>
+                <TextBlock x:Name="AfterDownloadHintText" Classes="secondary" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,14" />
+
                 <TextBlock x:Name="SchedulerHeader" Text="Queue scheduler" FontWeight="SemiBold" Margin="0,4,0,6" />
                 <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" Margin="0,0,0,6">
                     <CheckBox x:Name="SchedulerStartCheck" Content="Start downloads at" VerticalAlignment="Center" Margin="0,0,12,6" />

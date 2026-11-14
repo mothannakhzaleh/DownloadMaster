@@ -59,6 +59,8 @@ Screenshots are generated from the real app by [`scripts/screenshots.ps1`](scrip
 - **SHA-256** shown after each download (*Copy SHA-256*)
 - **Batch download** with patterns like `https://example.com/part_[01-20].rar`, `img_[a-f].jpg`, `[1-100:5]`
 - **Category folders** (optional): Video, Music, Programs, Compressed, Documents, Images, Other
+- **Extract archives when done** (optional): `.zip` and `.tar(.gz)` built in; `.7z`, `.rar`, `.tar.xz` and split / multi-part sets (`.part1.rar`, `.r00`, `.7z.001`) with 7-Zip, once every part is downloaded; zip-slip safe; can delete the archive afterwards
+- **Antivirus scan after download** (optional): Windows Defender on Windows, ClamAV (`clamscan`) on macOS / Linux; a threat is flagged in the list and the file is kept
 
 ### Video (yt-dlp)
 - YouTube, X/Twitter and 1000+ sites · fetch preview with auto-detected quality and format
@@ -83,7 +85,7 @@ Screenshots are generated from the real app by [`scripts/screenshots.ps1`](scrip
 
 ### App
 - **Windows, macOS and Linux** (Avalonia UI) · dark / light themes · English + Arabic (RTL)
-- **Closes to the tray / menu bar** instead of quitting: open, add URL from clipboard, browser interception on/off, install extension, speed limit, pause/resume all, exit
+- **Closes to the tray / menu bar** instead of quitting: open, add URL from clipboard, browser interception on/off, install extension, speed limit, pause/resume all, exit; the first time, a short notice says it is still running there
 - **Single instance** — launching again (or with a URL) hands over to the running app
 - Local bridge for the extension on `127.0.0.1:45780` (loopback only, extension origins only; you confirm every caught download)
 - **Standalone** release: one executable with the .NET runtime inside, plus `tools/` (yt-dlp + FFmpeg) and `browser-extension/`

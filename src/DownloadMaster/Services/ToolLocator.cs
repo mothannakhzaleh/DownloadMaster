@@ -88,6 +88,34 @@ public static class ToolLocator
             .FirstOrDefault(File.Exists);
     }
 
+    /// <summary>
+    /// First of <paramref name="names"/> (without the .exe suffix) found on PATH or in the usual
+    /// install folders (Homebrew, /usr/local/bin, ...). Null when none is installed.
+    /// </summary>
+    public static string? FindExecutable(params string[] names)
+    {
+        foreach (var dir in SearchFolders())
+        {
+            foreach (var name in names)
+            {
+                string candidate;
+                try
+                {
+                    candidate = Path.Combine(dir, name + ExeSuffix);
+                }
+                catch (ArgumentException)
+                {
+                    break; // malformed PATH entry
+                }
+
+                if (File.Exists(candidate))
+                    return candidate;
+            }
+        }
+
+        return null;
+    }
+
     private static IEnumerable<string> SearchFolders()
     {
         var seen = new HashSet<string>(OperatingSystem.IsWindows()

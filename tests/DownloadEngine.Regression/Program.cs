@@ -1,8 +1,11 @@
 // Headless regressions for DownloadMaster's direct-file engine (HttpFileDownloadService):
 // integrity, multi-connection + work stealing, crash-safe resume (real process kill), 403 →
-// "link expired" → refresh address, the global speed limiter and 206 probe sizing.
+// "link expired" → refresh address, the global speed limiter and 206 probe sizing; plus the
+// after-download steps: archive extraction (zip-slip, multi-part sets) and antivirus exit codes.
 // Exit code 0 = all checks passed, 1 = a check failed (CI friendly).
 using System.Diagnostics;
+using System.Formats.Tar;
+using System.IO.Compression;
 using System.Reflection;
 using System.Security.Cryptography;
 using DownloadEngine.Regression;
@@ -275,6 +278,238 @@ await Run("server without Range support downloads on one connection", async () =
     Check(server.RequestsFor("/norange.bin").Count() == 2, "expected probe + one full GET");
 });
 
+// ---- After download: archive extraction and antivirus result mapping (no network) ----------
+
+var archiveRoot = Path.Combine(runDir, "archives");
+
+await Run("zip extracts into a folder named after the archive", async () =>
+{
+    var dir = Path.Combine(archiveRoot, "zip", "a", "b");
+    Directory.CreateDirectory(dir);
+    var zip = Path.Combine(dir, "sample.zip");
+    WriteZip(zip, ("readme.txt", "hello"), ("docs/", null), ("docs/inner/deep.txt", "deep"));
+
+    var first = await ArchiveExtractor.ExtractAsync(zip, deleteArchive: false);
+    Check(first.Outcome == ArchiveExtractOutcome.Extracted, $"outcome {first.Outcome} {first.Detail}");
+    Check(first.TargetFolder == Path.Combine(dir, "sample"), $"target '{first.TargetFolder}'");
+    Check(File.ReadAllText(Path.Combine(dir, "sample", "readme.txt")) == "hello", "readme.txt content");
+    Check(File.ReadAllText(Path.Combine(dir, "sample", "docs", "inner", "deep.txt")) == "deep", "nested file content");
+    Check(File.Exists(zip), "archive must be kept when delete is off");
+
+    // The folder name is taken: next one is "sample (2)"; a file called "sample (3)" is skipped too.
+    File.WriteAllText(Path.Combine(dir, "sample (3)"), "not a folder");
+    var second = await ArchiveExtractor.ExtractAsync(zip, deleteArchive: false);
+    Check(second.TargetFolder == Path.Combine(dir, "sample (2)"), $"second target '{second.TargetFolder}'");
+    var third = await ArchiveExtractor.ExtractAsync(zip, deleteArchive: true);
+    Check(third.TargetFolder == Path.Combine(dir, "sample (4)"), $"third target '{third.TargetFolder}'");
+    Check(!File.Exists(zip), "archive should be deleted after extraction when asked");
+    Check(third.DeletedFiles is { Count: 1 }, "deleted file list");
+});
+
+await Run("zip-slip and absolute entries are rejected", async () =>
+{
+    // Deep enough that "../../evil.txt" would still land inside this run's folder.
+    var dir = Path.Combine(archiveRoot, "slip", "x", "y");
+    Directory.CreateDirectory(dir);
+    var zip = Path.Combine(dir, "bad.zip");
+    WriteZip(zip, ("ok.txt", "fine"), ("../../evil.txt", "escaped"));
+
+    var result = await ArchiveExtractor.ExtractAsync(zip, deleteArchive: true);
+    Check(result.Outcome == ArchiveExtractOutcome.Failed, $"outcome {result.Outcome}");
+    Check(result.Detail.Contains("Unsafe path"), $"detail '{result.Detail}'");
+    Check(!File.Exists(Path.Combine(archiveRoot, "slip", "evil.txt")) && !File.Exists(Path.Combine(dir, "evil.txt")),
+        "the escaping entry must not be written");
+    Check(!Directory.Exists(Path.Combine(dir, "bad")), "the partial target folder should be removed");
+    Check(File.Exists(zip), "a rejected archive must never be deleted");
+
+    var target = Path.Combine(dir, "target");
+    foreach (var name in new[] { "../evil.txt", "a/../../evil.txt", @"..\evil.txt", "/etc/evil", @"\evil.txt", "C:/evil.txt", "C:evil.txt" })
+    {
+        var rejected = false;
+        try { ArchiveExtractor.ResolveEntryPath(target, name); }
+        catch (UnsafeArchiveEntryException) { rejected = true; }
+        if (OperatingSystem.IsWindows() || !name.Contains(':'))
+            Check(rejected, $"'{name}' should be rejected");
+    }
+
+    Check(ArchiveExtractor.ResolveEntryPath(target, "sub/./file.txt") == Path.Combine(Path.GetFullPath(target), "sub", "file.txt"), "normal entry path");
+
+    // Same rules for tar: a "../" entry fails the whole archive.
+    var tgz = Path.Combine(dir, "bad.tar.gz");
+    WriteTarGz(tgz, ("good.txt", "ok"), ("../../evil-tar.txt", "escaped"));
+    var tarResult = await ArchiveExtractor.ExtractAsync(tgz, deleteArchive: false);
+    Check(tarResult.Outcome == ArchiveExtractOutcome.Failed, $"tar outcome {tarResult.Outcome}");
+    Check(!File.Exists(Path.Combine(archiveRoot, "slip", "evil-tar.txt")), "tar entry escaped");
+});
+
+await Run("tar.gz extracts in-process", async () =>
+{
+    var dir = Path.Combine(archiveRoot, "tgz");
+    Directory.CreateDirectory(dir);
+    var tgz = Path.Combine(dir, "bundle.tar.gz");
+    WriteTarGz(tgz, ("bundle/a.txt", "A"), ("bundle/sub/b.txt", "B"));
+    var result = await ArchiveExtractor.ExtractAsync(tgz, deleteArchive: false);
+    Check(result.Outcome == ArchiveExtractOutcome.Extracted, $"outcome {result.Outcome} {result.Detail}");
+    Check(result.TargetFolder == Path.Combine(dir, "bundle"), $"target '{result.TargetFolder}' (both .tar and .gz stripped)");
+    Check(File.ReadAllText(Path.Combine(dir, "bundle", "bundle", "sub", "b.txt")) == "B", "nested tar file");
+});
+
+await Run("multi-part sets: only the first part, only when complete", async () =>
+{
+    var dir = Path.Combine(archiveRoot, "multi");
+    Directory.CreateDirectory(dir);
+    string P(string name) => Path.Combine(dir, name);
+
+    var cases = new (string Name, bool Multi, bool First, string FirstPart, string BaseName)[]
+    {
+        ("movie.part1.rar", true, true, "movie.part1.rar", "movie"),
+        ("movie.part01.rar", true, true, "movie.part01.rar", "movie"),
+        ("movie.part02.rar", true, false, "movie.part01.rar", "movie"),
+        ("movie.part10.rar", true, false, "movie.part01.rar", "movie"),
+        ("old.r00", true, false, "old.rar", "old"),
+        ("old.r12", true, false, "old.rar", "old"),
+        ("disk.7z.001", true, true, "disk.7z.001", "disk"),
+        ("disk.7z.002", true, false, "disk.7z.001", "disk"),
+        ("pack.zip.001", true, true, "pack.zip.001", "pack"),
+        ("pack.zip.003", true, false, "pack.zip.001", "pack"),
+        ("single.rar", false, true, "single.rar", "single"),
+        ("plain.zip", false, true, "plain.zip", "plain"),
+        ("plain.tgz", false, true, "plain.tgz", "plain"),
+        ("plain.tar.xz", false, true, "plain.tar.xz", "plain"),
+    };
+    foreach (var c in cases)
+    {
+        var info = ArchiveExtractor.Identify(P(c.Name)) ?? throw new Exception($"{c.Name} not recognised");
+        Check(info.IsMultiPart == c.Multi, $"{c.Name}: multi {info.IsMultiPart}");
+        Check(info.IsFirstPart == c.First, $"{c.Name}: first {info.IsFirstPart}");
+        Check(info.FirstPartPath == P(c.FirstPart), $"{c.Name}: first part {info.FirstPartPath}");
+        Check(info.BaseName == c.BaseName, $"{c.Name}: base {info.BaseName}");
+    }
+
+    Check(ArchiveExtractor.Identify(P("notes.txt")) is null, "a .txt is not an archive");
+    Check(ArchiveExtractor.Identify(P("report.part.pdf")) is null, "report.part.pdf is not an archive");
+    Check(ArchiveExtractor.Identify(P("plain.zip"))!.Format == ArchiveFormat.Zip, "zip format");
+    Check(ArchiveExtractor.Identify(P("pack.zip.001"))!.Format == ArchiveFormat.SevenZip, ".zip.001 goes to 7-Zip");
+
+    // name.rar becomes multi-part once a name.r00 sibling exists.
+    File.WriteAllText(P("old.rar"), "x");
+    Check(!ArchiveExtractor.Identify(P("old.rar"))!.IsMultiPart, "old.rar alone is single");
+    File.WriteAllText(P("old.r00"), "x");
+    var old = ArchiveExtractor.Identify(P("old.rar"))!;
+    Check(old.IsMultiPart && old.IsFirstPart, "old.rar + old.r00 is the first part of a set");
+    Check(ArchiveExtractor.IsSetComplete(old), "old.rar + r00 is complete");
+    File.WriteAllText(P("old.r02"), "x");
+    Check(!ArchiveExtractor.IsSetComplete(old), "gap r00 → r02 is incomplete");
+    File.WriteAllText(P("old.r01"), "x");
+    Check(ArchiveExtractor.IsSetComplete(old), "r00..r02 complete");
+    File.WriteAllText(P("old.r03.part"), "x");
+    Check(!ArchiveExtractor.IsSetComplete(old), "old.r03 still downloading (.part)");
+
+    // name.partN.rar: wait for every part, skip later parts silently.
+    File.WriteAllText(P("show.part1.rar"), "x");
+    File.WriteAllText(P("show.part2.rar"), "x");
+    File.WriteAllText(P("show.part3.rar.part"), "x");
+    var show = ArchiveExtractor.Identify(P("show.part2.rar"))!;
+    Check(!ArchiveExtractor.IsSetComplete(show), "show.part3 is still a .part download");
+    var later = await ArchiveExtractor.ExtractAsync(P("show.part2.rar"), deleteArchive: false);
+    Check(later.Outcome == ArchiveExtractOutcome.LaterPart, $"later part outcome {later.Outcome}");
+    var firstPart = await ArchiveExtractor.ExtractAsync(P("show.part1.rar"), deleteArchive: false);
+    Check(firstPart.Outcome == ArchiveExtractOutcome.WaitingForParts, $"first part outcome {firstPart.Outcome}");
+    Check(!Directory.Exists(P("show")), "nothing may be extracted while parts are missing");
+
+    File.Delete(P("show.part3.rar.part"));
+    Check(ArchiveExtractor.IsSetComplete(show), "part1 + part2 complete");
+    Check(!ArchiveExtractor.IsSetComplete(show, [P("show.part3.rar")]), "a queued part3 keeps the set waiting");
+    Check(ArchiveExtractor.IsSetComplete(show, [P("other.part3.rar"), P("show.part1.rar")]), "unrelated pending files do not count");
+    File.WriteAllText(P("show.part4.rar"), "x");
+    Check(!ArchiveExtractor.IsSetComplete(show), "gap part2 → part4 is incomplete");
+
+    var split = ArchiveExtractor.Identify(P("disk.7z.002"))!;
+    File.WriteAllText(P("disk.7z.002"), "x");
+    Check(!ArchiveExtractor.IsSetComplete(split), "disk.7z.001 missing");
+    File.WriteAllText(P("disk.7z.001"), "x");
+    Check(ArchiveExtractor.IsSetComplete(split), "001 + 002 complete");
+    Check(ArchiveExtractor.GetSetParts(split).Count == 2, "two parts on disk");
+});
+
+await Run("7-Zip formats (.7z, .tar.xz) when 7-Zip is installed", async () =>
+{
+    var sevenZip = ArchiveExtractor.FindSevenZip();
+    if (sevenZip is null)
+    {
+        Console.WriteLine("    skipped: 7-Zip not found");
+        return;
+    }
+
+    var dir = Path.Combine(archiveRoot, "sevenzip");
+    var source = Path.Combine(dir, "source");
+    Directory.CreateDirectory(Path.Combine(source, "inner"));
+    File.WriteAllText(Path.Combine(source, "inner", "x.txt"), "seven");
+
+    var archive = Path.Combine(dir, "made.7z");
+    var made = await ExternalToolRunner.RunAsync(sevenZip, ["a", "-bd", archive, Path.Combine(source, "inner")], TimeSpan.FromMinutes(1));
+    Check(made.ExitCode == 0, $"7z a failed: {made.Output}");
+    var result = await ArchiveExtractor.ExtractAsync(archive, deleteArchive: true);
+    Check(result.Outcome == ArchiveExtractOutcome.Extracted, $"7z outcome {result.Outcome} {result.Detail}");
+    Check(File.ReadAllText(Path.Combine(dir, "made", "inner", "x.txt")) == "seven", "7z content");
+    Check(!File.Exists(archive), "7z archive deleted");
+
+    var tar = Path.Combine(dir, "tarred.tar");
+    WriteTar(tar, ("t/y.txt", "xz"));
+    var xz = Path.Combine(dir, "tarred.tar.xz");
+    made = await ExternalToolRunner.RunAsync(sevenZip, ["a", "-bd", "-txz", xz, tar], TimeSpan.FromMinutes(1));
+    Check(made.ExitCode == 0, $"7z a -txz failed: {made.Output}");
+    File.Delete(tar);
+    result = await ArchiveExtractor.ExtractAsync(xz, deleteArchive: false);
+    Check(result.Outcome == ArchiveExtractOutcome.Extracted, $"tar.xz outcome {result.Outcome} {result.Detail}");
+    Check(File.ReadAllText(Path.Combine(dir, "tarred", "t", "y.txt")) == "xz", "tar.xz content (not a bare .tar)");
+
+    // A password prompt must fail fast (stdin is closed), not hang the extraction queue.
+    var locked = Path.Combine(dir, "locked.7z");
+    made = await ExternalToolRunner.RunAsync(sevenZip, ["a", "-bd", "-psecret", locked, Path.Combine(source, "inner")], TimeSpan.FromMinutes(1));
+    Check(made.ExitCode == 0, $"7z a -p failed: {made.Output}");
+    var clock = Stopwatch.StartNew();
+    result = await ArchiveExtractor.ExtractAsync(locked, deleteArchive: true);
+    Check(result.Outcome == ArchiveExtractOutcome.Failed && result.Detail.Contains("password"), $"locked outcome {result.Outcome} '{result.Detail}'");
+    Check(clock.Elapsed < TimeSpan.FromSeconds(30), $"password prompt took {clock.Elapsed.TotalSeconds:0}s");
+    Check(File.Exists(locked) && !Directory.Exists(Path.Combine(dir, "locked")), "failed extraction keeps the archive and removes the folder");
+    Console.WriteLine($"    7-Zip: {sevenZip}");
+});
+
+await Run("antivirus exit codes map to clean / threat / could not scan", () =>
+{
+    var defender = AntivirusScanner.DefenderName;
+    var clam = AntivirusScanner.ClamAvName;
+    Check(AntivirusScanner.Interpret(defender, new(0, "", false)).Outcome == ScanOutcome.Clean, "Defender 0");
+    var threat = AntivirusScanner.Interpret(defender, new(2, "Scan starting...\nThreat                  : Virus:DOS/EICAR_Test_File\n", false));
+    Check(threat.Outcome == ScanOutcome.ThreatFound && threat.Detail == "Virus:DOS/EICAR_Test_File", $"Defender 2 → {threat}");
+    Check(AntivirusScanner.Interpret(defender, new(1, "", false)).Outcome == ScanOutcome.Failed, "Defender 1 is not a threat");
+    // Real output of MpCmdRun with Defender turned off: exit code 2, but no scan happened.
+    var disabled = AntivirusScanner.Interpret(defender, new(2, "CmdTool: Failed with hr = 0x80004005. Check C:\\Temp\\MpCmdRun.log for more information", false));
+    Check(disabled.Outcome == ScanOutcome.Failed && disabled.Detail.Contains("0x80004005"), $"Defender off → {disabled}");
+    Check(AntivirusScanner.Interpret(defender, new(-2147024891, "Access denied", false)).Outcome == ScanOutcome.Failed, "Defender error");
+    var clamThreat = AntivirusScanner.Interpret(clam, new(1, "/tmp/eicar.com: Win.Test.EICAR_HDB-1 FOUND\n", false));
+    Check(clamThreat.Outcome == ScanOutcome.ThreatFound && clamThreat.Detail == "Win.Test.EICAR_HDB-1", $"clamscan 1 → {clamThreat}");
+    Check(AntivirusScanner.Interpret(clam, new(2, "", false)).Outcome == ScanOutcome.Failed, "clamscan 2 is an error");
+    Check(AntivirusScanner.Interpret(clam, new(-1, "", true)).Outcome == ScanOutcome.Failed, "timeout");
+    return Task.CompletedTask;
+});
+
+// Opt-in (runs the real scanner on one small file in test-output): DOWNLOADMASTER_TEST_ANTIVIRUS=1
+if (Environment.GetEnvironmentVariable("DOWNLOADMASTER_TEST_ANTIVIRUS") == "1")
+{
+    await Run("real antivirus scan of a small clean file", async () =>
+    {
+        var file = Path.Combine(archiveRoot, "scan", "clean.txt");
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        File.WriteAllText(file, "just text");
+        var result = await AntivirusScanner.ScanAsync(file);
+        Console.WriteLine($"    {result.Scanner}: {result.Outcome} {result.Detail}");
+        Check(result.Outcome != ScanOutcome.ThreatFound, "a text file must not be reported as a threat");
+        Check(File.Exists(file), "the scanned file must be kept");
+    });
+}
+
 Console.WriteLine();
 Console.WriteLine($"{passed} passed, {failures.Count} failed");
 foreach (var failure in failures)
@@ -365,6 +600,46 @@ static async Task<int> RunChildAsync(string[] childArgs)
     };
     await new HttpFileDownloadService().DownloadAsync(item, 4, null, null, CancellationToken.None);
     return 3; // finishing means the parent never killed us
+}
+
+// Entries with a null text are folders.
+static void WriteZip(string path, params (string Name, string? Text)[] entries)
+{
+    using var zip = ZipFile.Open(path, ZipArchiveMode.Create);
+    foreach (var (name, text) in entries)
+    {
+        var entry = zip.CreateEntry(name);
+        if (text is null)
+            continue;
+        using var writer = new StreamWriter(entry.Open());
+        writer.Write(text);
+    }
+}
+
+static void WriteTar(string path, params (string Name, string Text)[] entries)
+{
+    using var file = File.Create(path);
+    WriteTarTo(file, entries);
+}
+
+static void WriteTarGz(string path, params (string Name, string Text)[] entries)
+{
+    using var file = File.Create(path);
+    using var gzip = new GZipStream(file, CompressionLevel.Fastest);
+    WriteTarTo(gzip, entries);
+}
+
+static void WriteTarTo(Stream stream, (string Name, string Text)[] entries)
+{
+    using var writer = new TarWriter(stream, TarEntryFormat.Pax, leaveOpen: true);
+    foreach (var (name, text) in entries)
+    {
+        var entry = new PaxTarEntry(TarEntryType.RegularFile, name)
+        {
+            DataStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(text))
+        };
+        writer.WriteEntry(entry);
+    }
 }
 
 static byte[] MakeData(int length, int seed)

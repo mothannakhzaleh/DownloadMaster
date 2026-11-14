@@ -53,6 +53,18 @@ public sealed class AppSettings
     /// <summary>Queue scheduler: pause running file downloads at this local time (HH:mm) each day.</summary>
     public bool SchedulerStopEnabled { get; set; }
     public string SchedulerStopTime { get; set; } = "07:00";
+
+    /// <summary>Extract finished archives (zip, 7z, rar, tar...) into a folder named after the archive, next to it.</summary>
+    public bool ExtractArchivesWhenDone { get; set; }
+
+    /// <summary>Delete the archive (every part of a multi-part set) after a successful extraction.</summary>
+    public bool DeleteArchiveAfterExtract { get; set; }
+
+    /// <summary>Scan finished direct-file downloads with Windows Defender (Windows) or ClamAV (macOS / Linux).</summary>
+    public bool ScanDownloadsWithAntivirus { get; set; }
+
+    /// <summary>The one-time "still running in the tray" notice has been shown.</summary>
+    public bool TrayNoticeShown { get; set; }
 }
 
 public sealed class VideoInfo

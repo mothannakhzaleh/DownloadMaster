@@ -186,8 +186,8 @@ public sealed class DownloadManager
                         () => _pauseRegistry.WaitIfPausedAsync(item.Id, linked.Token),
                         linked.Token));
 
-                if (item.Status == DownloadStatus.Completed && ComputeChecksums)
-                    _ = FileChecksumService.ApplySha256Async(item);
+                if (item.Status == DownloadStatus.Completed)
+                    _ = Task.Run(() => PostProcessFileAsync(item));
 
                 return;
             }
@@ -302,6 +302,144 @@ public sealed class DownloadManager
         item.ErrorMessage = lastError?.Message ?? "Unknown error";
         item.AppendDiagnostic($"Failed: {item.ErrorMessage}");
         item.StatusText = "Failed";
+    }
+
+    /// <summary>
+    /// After a direct-file download completes, in the background and in this order (each step needs
+    /// the file to itself): SHA-256 → antivirus scan → extract archive (→ delete it). A threat skips
+    /// extraction. Results go to the item's ScanNote / ArchiveNote; nothing here fails the download.
+    /// </summary>
+    private async Task PostProcessFileAsync(DownloadItem item)
+    {
+        try
+        {
+            if (ComputeChecksums)
+                await FileChecksumService.ApplySha256Async(item);
+
+            var settings = _settings.Current;
+            var path = item.OutputPath;
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+                return;
+
+            var threat = false;
+            if (settings.ScanDownloadsWithAntivirus)
+                threat = await ScanAsync(item, path);
+
+            if (settings.ExtractArchivesWhenDone && !threat)
+                await ExtractArchiveAsync(item, path, settings.DeleteArchiveAfterExtract);
+        }
+        catch (Exception ex)
+        {
+            item.AppendDiagnostic($"After-download step failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>Returns true when a threat was found.</summary>
+    private static async Task<bool> ScanAsync(DownloadItem item, string path)
+    {
+        item.ScanNote = new StatusNote("ScanRunning");
+        var result = await AntivirusScanner.ScanAsync(path);
+        switch (result.Outcome)
+        {
+            case ScanOutcome.Clean:
+                item.ScanNote = new StatusNote("ScanClean", result.Scanner);
+                item.AppendDiagnostic($"{result.Scanner}: no threats found");
+                return false;
+
+            case ScanOutcome.ThreatFound:
+                var threat = string.IsNullOrWhiteSpace(result.Detail) ? result.Scanner : $"{result.Detail}, {result.Scanner}";
+                item.ScanNote = new StatusNote("ScanThreat", threat);
+                item.AppendDiagnostic($"{result.Scanner}: THREAT FOUND {result.Detail} — the file was kept: {path}");
+                return true;
+
+            case ScanOutcome.NoScanner:
+                item.ScanNote = new StatusNote(OperatingSystem.IsWindows() ? "ScanNoDefender" : "ScanNoClamAv");
+                item.AppendDiagnostic("Antivirus scan skipped: no scanner found");
+                return false;
+
+            default:
+                item.ScanNote = new StatusNote("ScanFailed", result.Detail);
+                item.AppendDiagnostic($"{result.Scanner}: scan failed: {result.Detail}");
+                return false;
+        }
+    }
+
+    private async Task ExtractArchiveAsync(DownloadItem item, string path, bool deleteArchive)
+    {
+        var info = ArchiveExtractor.Identify(path);
+        if (info is null)
+            return;
+
+        // Notes belong on the first part's row when this is a later part of a set.
+        var noteItem = info.IsFirstPart ? item : FindCompletedItem(info.FirstPartPath) ?? item;
+        var result = await ArchiveExtractor.ExtractAsync(
+            path,
+            deleteArchive,
+            PendingDownloadPaths(item),
+            onStarted: _ => noteItem.ArchiveNote = new StatusNote("ArchiveExtracting"));
+
+        switch (result.Outcome)
+        {
+            case ArchiveExtractOutcome.Extracted:
+                noteItem.ArchiveNote = new StatusNote("ArchiveExtracted", Path.GetFileName(result.TargetFolder));
+                noteItem.AppendDiagnostic($"Extracted to {result.TargetFolder}");
+                if (result.DeletedFiles is { Count: > 0 } deleted)
+                    noteItem.AppendDiagnostic($"Deleted the archive: {string.Join(", ", deleted.Select(Path.GetFileName))}");
+                break;
+
+            case ArchiveExtractOutcome.WaitingForParts:
+                noteItem.ArchiveNote = new StatusNote("ArchiveWaitingForParts");
+                break;
+
+            case ArchiveExtractOutcome.NeedsSevenZip:
+                noteItem.ArchiveNote = new StatusNote("ArchiveNeeds7Zip");
+                noteItem.AppendDiagnostic("Extraction skipped: 7-Zip (7z / 7zz / 7za) was not found");
+                break;
+
+            case ArchiveExtractOutcome.Failed:
+                noteItem.ArchiveNote = new StatusNote("ArchiveExtractFailed", result.Detail);
+                noteItem.AppendDiagnostic($"Extraction failed: {result.Detail}");
+                break;
+        }
+    }
+
+    private DownloadItem? FindCompletedItem(string outputPath) =>
+        _tracked.Values.FirstOrDefault(i =>
+            i.Status == DownloadStatus.Completed
+            && !string.IsNullOrWhiteSpace(i.OutputPath)
+            && string.Equals(Path.GetFullPath(i.OutputPath), outputPath, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Where unfinished direct-file downloads will land, so a multi-part set waits for all of them.</summary>
+    private List<string> PendingDownloadPaths(DownloadItem except)
+    {
+        var paths = new List<string>();
+        foreach (var other in _tracked.Values)
+        {
+            if (ReferenceEquals(other, except) || other.Kind != DownloadKind.DirectFile
+                || other.Status is not (DownloadStatus.Queued or DownloadStatus.Fetching or DownloadStatus.Downloading or DownloadStatus.Paused))
+                continue;
+
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(other.OutputPath))
+                {
+                    paths.Add(other.OutputPath);
+                    continue;
+                }
+
+                var name = other.DesiredFileName;
+                if (string.IsNullOrWhiteSpace(name) && Uri.TryCreate(other.Url, UriKind.Absolute, out var uri))
+                    name = Uri.UnescapeDataString(Path.GetFileName(uri.AbsolutePath));
+                if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(other.SaveFolder))
+                    paths.Add(Path.Combine(other.SaveFolder, Path.GetFileName(name)));
+            }
+            catch (ArgumentException)
+            {
+                // odd name: ignore
+            }
+        }
+
+        return paths;
     }
 
     private static void CleanupInstagramCookies(DownloadItem item)

@@ -20,6 +20,8 @@ public sealed class DownloadItem : INotifyPropertyChanged
     private string _sha256 = string.Empty;
     private bool _isComputingSha256;
     private bool _isLinkExpired;
+    private StatusNote? _archiveNote;
+    private StatusNote? _scanNote;
 
     public string Id { get; init; } = Guid.NewGuid().ToString("N");
     /// <summary>Settable so "Refresh download address" can swap in a fresh link for the same file.</summary>
@@ -72,6 +74,20 @@ public sealed class DownloadItem : INotifyPropertyChanged
     {
         get => _isComputingSha256;
         set { _isComputingSha256 = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>Result of "extract archives when done" (localized by the UI); null when not applicable.</summary>
+    public StatusNote? ArchiveNote
+    {
+        get => _archiveNote;
+        set { _archiveNote = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>Result of the antivirus scan after download (localized by the UI); null when not scanned.</summary>
+    public StatusNote? ScanNote
+    {
+        get => _scanNote;
+        set { _scanNote = value; OnPropertyChanged(); }
     }
 
     /// <summary>The server answered 403/410 on resume: waiting for a fresh link (Refresh download address).</summary>
@@ -212,3 +228,6 @@ public sealed class DownloadItem : INotifyPropertyChanged
         NotifyDispatcher(() => PropertyChanged?.Invoke(this, args));
     }
 }
+
+/// <summary>A status line added after completion: a localization key plus an optional {0} argument.</summary>
+public sealed record StatusNote(string Key, string? Arg = null);

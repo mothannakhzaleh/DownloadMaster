@@ -56,6 +56,9 @@ public partial class SettingsWindow : Window
         MinimizeToTrayCheck.IsChecked = s.MinimizeToTray;
         ClipboardMonitorCheck.IsChecked = s.ClipboardMonitor;
         SortCategoriesCheck.IsChecked = s.SortIntoCategoryFolders;
+        ExtractArchivesCheck.IsChecked = s.ExtractArchivesWhenDone;
+        DeleteArchiveCheck.IsChecked = s.DeleteArchiveAfterExtract;
+        ScanAntivirusCheck.IsChecked = s.ScanDownloadsWithAntivirus;
         SchedulerStartCheck.IsChecked = s.SchedulerStartEnabled;
         SchedulerStartBox.Text = s.SchedulerStartTime;
         SchedulerStopCheck.IsChecked = s.SchedulerStopEnabled;
@@ -75,6 +78,11 @@ public partial class SettingsWindow : Window
         StartWithOsCheck.Content = _loc.Get("SettingsStartWithOs");
         ClipboardMonitorCheck.Content = _loc.Get("SettingsClipboardMonitor");
         SortCategoriesText.Text = _loc.Get("SettingsSortCategories");
+        AfterDownloadHeader.Text = _loc.Get("SettingsAfterDownloadHeader");
+        ExtractArchivesText.Text = _loc.Get("SettingsExtractArchives");
+        DeleteArchiveCheck.Content = _loc.Get("SettingsDeleteArchive");
+        ScanAntivirusText.Text = _loc.Get("SettingsScanAntivirus");
+        AfterDownloadHintText.Text = _loc.Get("SettingsAfterDownloadHint");
         SchedulerHeader.Text = _loc.Get("SettingsSchedulerHeader");
         SchedulerStartCheck.Content = _loc.Get("SettingsSchedulerStart");
         SchedulerStopCheck.Content = _loc.Get("SettingsSchedulerStop");
@@ -121,6 +129,9 @@ public partial class SettingsWindow : Window
         result.MinimizeToTray = MinimizeToTrayCheck.IsChecked == true;
         result.ClipboardMonitor = ClipboardMonitorCheck.IsChecked == true;
         result.SortIntoCategoryFolders = SortCategoriesCheck.IsChecked == true;
+        result.ExtractArchivesWhenDone = ExtractArchivesCheck.IsChecked == true;
+        result.DeleteArchiveAfterExtract = DeleteArchiveCheck.IsChecked == true;
+        result.ScanDownloadsWithAntivirus = ScanAntivirusCheck.IsChecked == true;
         result.SchedulerStartEnabled = startOn;
         result.SchedulerStopEnabled = stopOn;
         if (QueueSchedule.TryParseTime(startText, out var start))

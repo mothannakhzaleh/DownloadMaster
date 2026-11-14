@@ -20,6 +20,19 @@ public static class EngineStrings
         ["EngineSpeedUnlimited"] = "Unlimited",
         ["EngineSpeed2MB"] = "2 MB/s",
         ["EngineSpeed500KB"] = "500 KB/s",
+
+        // After download: antivirus scan and archive extraction (DownloadItem.ScanNote / ArchiveNote)
+        ["ScanRunning"] = "Scanning for viruses…",
+        ["ScanClean"] = "No threats found ({0})",
+        ["ScanThreat"] = "THREAT FOUND ({0}) — the file was kept; do not open it",
+        ["ScanNoDefender"] = "Not scanned: Windows Defender was not found",
+        ["ScanNoClamAv"] = "Not scanned: install ClamAV (clamscan) to scan downloads",
+        ["ScanFailed"] = "Antivirus scan failed: {0}",
+        ["ArchiveExtracting"] = "Extracting…",
+        ["ArchiveExtracted"] = "Extracted to {0}",
+        ["ArchiveWaitingForParts"] = "Will extract when every part has finished",
+        ["ArchiveNeeds7Zip"] = "Not extracted: install 7-Zip to extract this archive",
+        ["ArchiveExtractFailed"] = "Extraction failed: {0}",
     };
 
     public static readonly IReadOnlyDictionary<string, string> Arabic = new Dictionary<string, string>
@@ -39,5 +52,17 @@ public static class EngineStrings
         ["EngineSpeedUnlimited"] = "بلا حدود",
         ["EngineSpeed2MB"] = "2 ميغابايت/ث",
         ["EngineSpeed500KB"] = "500 كيلوبايت/ث",
+
+        ["ScanRunning"] = "جارٍ الفحص بحثاً عن الفيروسات…",
+        ["ScanClean"] = "لم يتم العثور على تهديدات ({0})",
+        ["ScanThreat"] = "تم العثور على تهديد ({0}) — تم الإبقاء على الملف؛ لا تفتحه",
+        ["ScanNoDefender"] = "لم يتم الفحص: لم يتم العثور على Windows Defender",
+        ["ScanNoClamAv"] = "لم يتم الفحص: ثبّت ClamAV (clamscan) لفحص التنزيلات",
+        ["ScanFailed"] = "فشل فحص مكافح الفيروسات: {0}",
+        ["ArchiveExtracting"] = "جارٍ فك الضغط…",
+        ["ArchiveExtracted"] = "تم فك الضغط إلى {0}",
+        ["ArchiveWaitingForParts"] = "سيتم فك الضغط عند اكتمال كل الأجزاء",
+        ["ArchiveNeeds7Zip"] = "لم يتم فك الضغط: ثبّت 7-Zip لفك ضغط هذا الأرشيف",
+        ["ArchiveExtractFailed"] = "فشل فك الضغط: {0}",
     };
 }

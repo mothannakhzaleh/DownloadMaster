@@ -16,6 +16,16 @@ public static class QueueStrings
         ["SettingsSchedulerHint"] = "Daily, local time (24-hour HH:mm). Outside the window new downloads wait; at the stop time running file downloads pause and resume in the next window.",
         ["SettingsSchedulerInvalidTime"] = "Enter the time as HH:mm (for example 02:00).",
         ["SettingsBrowserExtension"] = "Browser extension…",
+        ["SettingsAfterDownloadHeader"] = "When a file download finishes",
+        ["SettingsExtractArchives"] = "Extract archives (zip, 7z, rar, tar) into a folder next to the file",
+        ["SettingsDeleteArchive"] = "Delete the archive after a successful extraction",
+        ["SettingsScanAntivirus"] = "Scan the file with the antivirus (Windows Defender; ClamAV on macOS / Linux)",
+        ["SettingsAfterDownloadHint"] = "7z, rar, split and .tar.xz archives need 7-Zip. Multi-part sets are extracted once every part is downloaded. A detected threat is shown in the download list; the file is never deleted.",
+
+        // One-time notice when the window first hides to the tray
+        ["TrayNoticeTitle"] = "DownloadMaster is still running",
+        ["TrayNoticeBody"] = "Downloads keep going in the background. Click the tray icon to open the window again, or choose Exit there to quit.",
+        ["TrayNoticeBodyMac"] = "Downloads keep going in the background. Click the menu bar icon to open the window again, or choose Exit there to quit.",
 
         // Queue header
         ["QueueWhenDone"] = "When all downloads finish:",
@@ -68,6 +78,15 @@ public static class QueueStrings
         ["SettingsSchedulerHint"] = "يومياً بالتوقيت المحلي (24 ساعة HH:mm). خارج الفترة تنتظر التنزيلات الجديدة؛ وعند وقت الإيقاف تتوقف تنزيلات الملفات الجارية مؤقتاً وتُستأنف في الفترة التالية.",
         ["SettingsSchedulerInvalidTime"] = "أدخل الوقت بصيغة HH:mm (مثلاً 02:00).",
         ["SettingsBrowserExtension"] = "إضافة المتصفح…",
+        ["SettingsAfterDownloadHeader"] = "عند انتهاء تنزيل ملف",
+        ["SettingsExtractArchives"] = "فك ضغط الأرشيفات (zip، 7z، rar، tar) في مجلد بجانب الملف",
+        ["SettingsDeleteArchive"] = "حذف الأرشيف بعد نجاح فك الضغط",
+        ["SettingsScanAntivirus"] = "فحص الملف بمكافح الفيروسات (Windows Defender؛ ClamAV على macOS / Linux)",
+        ["SettingsAfterDownloadHint"] = "أرشيفات 7z وrar والمقسّمة و.tar.xz تحتاج إلى 7-Zip. يتم فك ضغط المجموعات متعددة الأجزاء بعد تنزيل كل الأجزاء. يظهر أي تهديد مكتشف في قائمة التنزيل، ولا يُحذف الملف أبداً.",
+
+        ["TrayNoticeTitle"] = "DownloadMaster لا يزال يعمل",
+        ["TrayNoticeBody"] = "تستمر التنزيلات في الخلفية. انقر أيقونة شريط النظام لفتح النافذة مرة أخرى، أو اختر خروج من هناك للإغلاق.",
+        ["TrayNoticeBodyMac"] = "تستمر التنزيلات في الخلفية. انقر أيقونة شريط القوائم لفتح النافذة مرة أخرى، أو اختر خروج من هناك للإغلاق.",
 
         ["QueueWhenDone"] = "عند انتهاء كل التنزيلات:",
         ["FinishNothing"] = "لا شيء",

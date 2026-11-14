@@ -166,10 +166,32 @@ public partial class MainWindow : Window
         {
             e.Cancel = true;
             Hide();
+            ShowTrayNoticeOnce();
             return;
         }
 
         base.OnClosing(e);
+    }
+
+    /// <summary>The first time the window hides to the tray, say that the app is still running there.</summary>
+    private void ShowTrayNoticeOnce()
+    {
+        if (_settings.Current.TrayNoticeShown)
+            return;
+
+        _settings.Current.TrayNoticeShown = true;
+        _settings.Save(_settings.Current);
+        Dispatcher.UIThread.Post(() =>
+        {
+            try
+            {
+                new TrayNoticeWindow(_loc).ShowNotice();
+            }
+            catch
+            {
+                // a notice is never worth an error
+            }
+        });
     }
 
     public void PauseAll()
@@ -770,16 +792,26 @@ public partial class MainWindow : Window
     private string FormatDoneStatus(DownloadItem item)
     {
         var done = _loc.Get("StatusDone");
-        return !string.IsNullOrWhiteSpace(item.OutputPath)
+        var text = !string.IsNullOrWhiteSpace(item.OutputPath)
             ? $"{done} — {Path.GetFileName(item.OutputPath)}"
             : done;
+
+        // After-download results: the antivirus verdict first so a threat is never missed.
+        foreach (var note in new[] { item.ScanNote, item.ArchiveNote })
+        {
+            if (note is not null)
+                text += " · " + string.Format(_loc.Get(note.Key), note.Arg ?? string.Empty);
+        }
+
+        return text;
     }
 
     private void AttachItemHandlers(DownloadItem item)
     {
         item.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(DownloadItem.Status) or nameof(DownloadItem.OutputPath) or nameof(DownloadItem.ErrorMessage))
+            if (e.PropertyName is nameof(DownloadItem.Status) or nameof(DownloadItem.OutputPath) or nameof(DownloadItem.ErrorMessage)
+                or nameof(DownloadItem.ScanNote) or nameof(DownloadItem.ArchiveNote))
             {
                 RefreshItemStatusText(item);
                 item.NotifyDiagnosticsChanged();
