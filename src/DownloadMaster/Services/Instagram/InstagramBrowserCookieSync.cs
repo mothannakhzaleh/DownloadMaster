@@ -10,6 +10,9 @@ public static class InstagramBrowserCookieSync
     /// <summary>How long "Sync from browser" waits for the extension (includes time to log in).</summary>
     public static readonly TimeSpan ExtensionWait = TimeSpan.FromMinutes(2);
 
+    /// <summary>How long to wait for the extension to report a version that supports sync.</summary>
+    private static readonly TimeSpan ExtensionVersionGrace = TimeSpan.FromSeconds(15);
+
     public static async Task<(bool Success, string? Error)> TrySyncAsync(
         InstagramBrowser browser,
         string outputPath,
@@ -41,9 +44,24 @@ public static class InstagramBrowserCookieSync
         var name = InstagramBrowserProfiles.DisplayName(browser);
 
         // Start listening before the tab opens so a fast answer isn't missed.
-        var wait = ExtensionCookieRelay.WaitAsync(ExtensionWait, ct);
+        using var waitCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var wait = ExtensionCookieRelay.WaitAsync(ExtensionWait, waitCts.Token);
         InstagramBrowserProfiles.OpenUrl(browser, ExtensionCookieRelay.SyncUrl);
         progress?.Invoke(string.Format(loc.Get("InstagramSyncWaitingExtension"), name));
+
+        // The tab makes the extension check in with its version right away. An old build (or none)
+        // will never answer, so say so instead of waiting the full two minutes.
+        var deadline = DateTime.UtcNow + ExtensionVersionGrace;
+        while (!wait.IsCompleted && DateTime.UtcNow < deadline && !ExtensionCookieRelay.ExtensionSupportsSync())
+            await Task.WhenAny(wait, Task.Delay(500, ct));
+        if (!wait.IsCompleted && !ExtensionCookieRelay.ExtensionSupportsSync())
+        {
+            waitCts.Cancel();
+            await wait;
+            var reported = ExtensionCookieRelay.ExtensionVersion();
+            return (false, string.Format(loc.Get("InstagramSyncOldExtension"), name,
+                reported ?? loc.Get("InstagramSyncOldExtensionUnknown"), ExtensionCookieRelay.MinExtensionVersion));
+        }
 
         var answer = await wait;
         if (answer is null)

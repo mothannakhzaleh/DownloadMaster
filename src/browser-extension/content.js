@@ -55,14 +55,23 @@
     return rect.width >= MIN_WIDTH && rect.height >= MIN_HEIGHT;
   }
 
+  let overlayCssPromise = null;
+  function overlayCss() {
+    overlayCssPromise ??= fetch(chrome.runtime.getURL('overlay.css'))
+      .then((r) => (r.ok ? r.text() : ''))
+      .catch(() => '');
+    return overlayCssPromise;
+  }
+
   function createBadge(video) {
     const host = document.createElement('div');
     host.style.cssText = 'position:fixed;top:0;left:0;z-index:2147483646;display:none;';
     const shadow = host.attachShadow({ mode: 'closed' });
 
-    const style = document.createElement('link');
-    style.rel = 'stylesheet';
-    style.href = chrome.runtime.getURL('overlay.css');
+    // Inline the CSS: a <link> to chrome-extension:// is refused on some sites ("Unsafe attempt to
+    // load URL ... Domains, protocols and ports must match"), e.g. YouTube.
+    const style = document.createElement('style');
+    overlayCss().then((css) => { style.textContent = css; });
     shadow.appendChild(style);
 
     const wrap = document.createElement('div');

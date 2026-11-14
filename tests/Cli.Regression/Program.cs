@@ -252,6 +252,23 @@ await Run("bridge /api/v1/cookies route", async () =>
         return (int)response.StatusCode;
     }
 
+    async Task Status(string query, string? origin)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"http://127.0.0.1:{LocalBridgeServer.Port}/api/v1/status{query}");
+        if (origin is not null)
+            request.Headers.Add("Origin", origin);
+        using var _ = await http.SendAsync(request);
+    }
+
+    await Status("?ext=2.0.2", "chrome-extension://abc");
+    Check(bridge.ExtensionVersion == "2.0.2", $"extension version recorded ({bridge.ExtensionVersion})");
+    ExtensionCookieRelay.ExtensionVersion = () => bridge.ExtensionVersion;
+    Check(ExtensionCookieRelay.ExtensionSupportsSync(), "2.0.2 supports sync");
+    await Status("", "chrome-extension://abc");
+    Check(bridge.ExtensionVersion is null && !ExtensionCookieRelay.ExtensionSupportsSync(), "an old extension (no ?ext) does not");
+    await Status("?ext=%3Cscript%3E", "chrome-extension://abc");
+    Check(bridge.ExtensionVersion is null, "junk versions ignored");
+
     Check(await Post(null) == 403, "a plain local process may not send cookies");
     Check(await Post("https://evil.example") == 403, "a web page may not send cookies");
     Check(await Post("chrome-extension://abc") == 409, "refused while no sync waits");

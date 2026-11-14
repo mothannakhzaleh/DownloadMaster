@@ -19,6 +19,15 @@ public static class ExtensionCookieRelay
     /// <summary>True when the local bridge is listening, so the extension can reach the app.</summary>
     public static Func<bool> BridgeAvailable { get; set; } = static () => false;
 
+    /// <summary>First extension version that answers "Sync from browser".</summary>
+    public static readonly Version MinExtensionVersion = new(2, 0, 1);
+
+    /// <summary>Version the extension last reported to the bridge; null = older build or none.</summary>
+    public static Func<string?> ExtensionVersion { get; set; } = static () => null;
+
+    public static bool ExtensionSupportsSync() =>
+        Version.TryParse(ExtensionVersion(), out var version) && version >= MinExtensionVersion;
+
     /// <summary>Called by the bridge; true when a sync was waiting and took the cookies.</summary>
     public static bool Deliver(BridgeCookiesRequest request)
     {

@@ -25,7 +25,8 @@ async function getStatus(force = false) {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 1200);
-    const response = await fetch(`${API}/status`, { signal: controller.signal, cache: 'no-store' });
+    const version = encodeURIComponent(chrome.runtime.getManifest().version);
+    const response = await fetch(`${API}/status?ext=${version}`, { signal: controller.signal, cache: 'no-store' });
     clearTimeout(timer);
     if (response.ok) {
       const json = await response.json();

@@ -35,6 +35,9 @@ public sealed class LocalBridgeServer : IDisposable
     /// <summary>Last time the browser extension talked to the app (it checks /status regularly).</summary>
     public DateTime? LastExtensionContactUtc { get; private set; }
 
+    /// <summary>Version the extension reports on /status (?ext=); null for builds older than 2.0.1.</summary>
+    public string? ExtensionVersion { get; private set; }
+
     public bool TryStart(out string? error)
     {
         try
@@ -121,6 +124,8 @@ public sealed class LocalBridgeServer : IDisposable
         switch (request.Method, path)
         {
             case ("GET", "/api/v1/status"):
+                if (origin is not null)
+                    ExtensionVersion = QueryValue(request.Path, "ext");
                 return BridgeResponse.Json(_status(), BridgeJsonContext.Default.BridgeStatus);
 
             case ("POST", "/api/v1/download"):
@@ -187,6 +192,22 @@ public sealed class LocalBridgeServer : IDisposable
         {
             return null;
         }
+    }
+
+    private static string? QueryValue(string path, string name)
+    {
+        var query = path.IndexOf('?') is var q and >= 0 ? path[(q + 1)..] : string.Empty;
+        foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var eq = pair.IndexOf('=');
+            if (eq > 0 && pair[..eq] == name)
+            {
+                var value = Uri.UnescapeDataString(pair[(eq + 1)..]);
+                return value.Length is > 0 and <= 32 && value.All(ch => char.IsAsciiDigit(ch) || ch == '.') ? value : null;
+            }
+        }
+
+        return null;
     }
 
     private static bool IsHttpUrl(string? url) =>
