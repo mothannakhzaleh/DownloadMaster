@@ -27,6 +27,10 @@ public static class Commands
             current.DefaultQuality = a.Quality;
         if (a.Format is not null)
             current.PreferredFormat = a.Format;
+        // The app's after-download steps (antivirus scan, extraction) run in the background after
+        // "Completed"; 'get' exits at that point, so it never starts them.
+        current.ScanDownloadsWithAntivirus = false;
+        current.ExtractArchivesWhenDone = false;
 
         var folder = Path.GetFullPath(a.Output ?? Environment.CurrentDirectory);
         var name = RemoteSecurity.CleanFileName(a.Name);

@@ -206,6 +206,39 @@ await Run("downloadmaster-cli get downloads and prints the path", async () =>
     Check(File.Exists(path) && Sha(File.ReadAllBytes(path)) == Sha(data), "content matches");
 });
 
+await Run("get skips the app's background after-download steps", async () =>
+{
+    // With extraction on in the app's settings, 'get' must still finish cleanly and leave the zip alone
+    // (it exits at "Completed", so a background extraction would be cut off half-way).
+    using (var zipBytes = new MemoryStream())
+    {
+        using (var zip = new System.IO.Compression.ZipArchive(zipBytes, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+        {
+            var entry = zip.CreateEntry("inside.txt");
+            await using var writer = new StreamWriter(entry.Open());
+            await writer.WriteAsync("hello");
+        }
+
+        files.Files["/cli/pack.zip"] = zipBytes.ToArray();
+    }
+
+    var settingsPath = Path.Combine(dataDir, "settings.json");
+    var before = File.Exists(settingsPath) ? await File.ReadAllTextAsync(settingsPath) : null;
+    await File.WriteAllTextAsync(settingsPath, "{\"ExtractArchivesWhenDone\":true,\"ScanDownloadsWithAntivirus\":true}");
+    try
+    {
+        var outDir = Path.Combine(runDir, "cli-zip");
+        var (code, _, stderr) = await RunCli(["get", files.Url("/cli/pack.zip"), "-o", outDir, "-q"]);
+        Check(code == 0, $"exit {code}: {stderr}");
+        Check(File.Exists(Path.Combine(outDir, "pack.zip")), "zip downloaded");
+        Check(Directory.GetDirectories(outDir).Length == 0, "nothing extracted by 'get'");
+    }
+    finally
+    {
+        if (before is null) File.Delete(settingsPath); else await File.WriteAllTextAsync(settingsPath, before);
+    }
+});
+
 await Run("downloadmaster-cli exit codes", async () =>
 {
     var (usage, _, _) = await RunCli(["get"]);

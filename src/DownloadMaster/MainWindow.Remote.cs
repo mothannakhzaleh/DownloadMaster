@@ -12,7 +12,9 @@ namespace DownloadMaster;
 /// </summary>
 public partial class MainWindow : IRemoteHost
 {
-    string IRemoteHost.SaveFolder => GetSaveFolder();
+    // Called from socket threads; GetSaveFolder reads a text box, which only the UI thread may touch.
+    string IRemoteHost.SaveFolder =>
+        Dispatcher.UIThread.CheckAccess() ? GetSaveFolder() : Dispatcher.UIThread.Invoke(GetSaveFolder);
 
     /// <summary>The app's settings (App starts remote access from them).</summary>
     internal SettingsService Settings => _settings;
