@@ -76,6 +76,13 @@ jobs:
         if: hashFiles('tests/ImageConversion.Regression/*.csproj') != ''
         run: dotnet run --project tests/ImageConversion.Regression -c Release
 
+      - name: Build command-line tool
+        run: dotnet build src/DownloadMaster.Cli/DownloadMaster.Cli.csproj -c Release
+
+      - name: CLI and remote-control regression tests
+        if: hashFiles('tests/Cli.Regression/*.csproj') != ''
+        run: dotnet run --project tests/Cli.Regression -c Release
+
       - name: Download engine regression tests
         if: hashFiles('tests/DownloadEngine.Regression/*.csproj') != ''
         run: dotnet run --project tests/DownloadEngine.Regression -c Release

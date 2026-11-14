@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Regressions for the command-line tool, the classic /d /p /f /n switches and the remote-control
+    server (pairing token, lockout, origin check, save-folder confinement, headless queue).
+    Run from the repo root:  dotnet run (project tests/Cli.Regression) -c Release
+    Everything is written under test-output/cli-regression; servers listen on 127.0.0.1 only.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Cli.Regression</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DownloadMaster.Cli\DownloadMaster.Cli.csproj" />
+    <Compile Include="..\DownloadEngine.Regression\RangeServer.cs" Link="Linked\RangeServer.cs" />
+  </ItemGroup>
+</Project>

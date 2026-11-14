@@ -12,7 +12,7 @@ if /I not "%~1"=="--yes" (
     if /I not "!CONFIRM!"=="Y" exit /b 0
 )
 
-for %%P in (src\DownloadMaster tests\ImageConversion.Regression tests\DownloadEngine.Regression) do (
+for %%P in (src\DownloadMaster src\DownloadMaster.Cli tests\ImageConversion.Regression tests\DownloadEngine.Regression tests\Cli.Regression) do (
     if exist "%ROOT%\%%P\bin" rmdir /s /q "%ROOT%\%%P\bin"
     if exist "%ROOT%\%%P\obj" rmdir /s /q "%ROOT%\%%P\obj"
 )

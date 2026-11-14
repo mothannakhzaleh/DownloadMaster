@@ -22,6 +22,14 @@ public sealed class AppSettings
     /// <summary>Closing the window hides it to the system tray / menu bar instead of exiting.</summary>
     public bool MinimizeToTray { get; set; } = true;
 
+    /// <summary>Remote control page and API (phone, another computer, the command-line tool). Off by default.</summary>
+    public bool RemoteAccessEnabled { get; set; }
+    /// <summary>Listen on every network interface (home network) instead of this computer only.</summary>
+    public bool RemoteAccessOnNetwork { get; set; }
+    public int RemoteAccessPort { get; set; } = 45781;
+    /// <summary>Pairing token every remote request must carry; created on first use.</summary>
+    public string RemoteAccessToken { get; set; } = string.Empty;
+
     /// <summary>Let the browser extension hand browser downloads to DownloadMaster.</summary>
     public bool InterceptBrowserDownloads { get; set; } = true;
 

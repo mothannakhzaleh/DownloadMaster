@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    downloadmaster-cli: command-line companion of DownloadMaster (Windows, macOS, Linux).
+      get    download a link here and now (multi-connection engine or yt-dlp)
+      add    hand a link to the running desktop app or server
+      serve  headless download server with the remote control page (NAS, server, spare PC)
+      list   show the downloads of a running server
+    Links the UI-free sources of the app instead of referencing the Avalonia project, so the tool
+    stays small and needs no graphics libraries. It uses the same tools/ folder (yt-dlp, FFmpeg)
+    and the same settings as the app when it sits next to it.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>downloadmaster-cli</AssemblyName>
+    <RootNamespace>DownloadMaster.Cli</RootNamespace>
+    <Version>2.0.0</Version>
+    <Product>DownloadMaster</Product>
+    <Description>DownloadMaster command-line tool and headless download server.</Description>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\DownloadMaster\Models\DownloadItem.cs" Link="Shared\Models\DownloadItem.cs" />
+    <Compile Include="..\DownloadMaster\Models\Enums.cs" Link="Shared\Models\Enums.cs" />
+    <Compile Include="..\DownloadMaster\Models\AppSettings.cs" Link="Shared\Models\AppSettings.cs" />
+    <Compile Include="..\DownloadMaster\Models\FileDownloadState.cs" Link="Shared\Models\FileDownloadState.cs" />
+    <Compile Include="..\DownloadMaster\Models\SegmentProgress.cs" Link="Shared\Models\SegmentProgress.cs" />
+    <Compile Include="..\DownloadMaster\Services\AppPaths.cs" Link="Shared\Services\AppPaths.cs" />
+    <Compile Include="..\DownloadMaster\Services\SettingsService.cs" Link="Shared\Services\SettingsService.cs" />
+    <Compile Include="..\DownloadMaster\Services\ToolLocator.cs" Link="Shared\Services\ToolLocator.cs" />
+    <Compile Include="..\DownloadMaster\Services\FormatHelpers.cs" Link="Shared\Services\FormatHelpers.cs" />
+    <Compile Include="..\DownloadMaster\Services\Downloads\*.cs" Link="Shared\Services\Downloads\%(Filename)%(Extension)" />
+    <!-- Instagram links go through the same engine; image re-encoding (Magick.NET) is replaced by Shims/. -->
+    <Compile Include="..\DownloadMaster\Services\Instagram\InstagramDirectDownloadService.cs" Link="Shared\Services\Instagram\InstagramDirectDownloadService.cs" />
+    <Compile Include="..\DownloadMaster\Services\Instagram\InstagramCookieFileReader.cs" Link="Shared\Services\Instagram\InstagramCookieFileReader.cs" />
+    <Compile Include="..\DownloadMaster\Services\Instagram\InstagramCookieSession.cs" Link="Shared\Services\Instagram\InstagramCookieSession.cs" />
+    <Compile Include="..\DownloadMaster\Services\Instagram\InstagramMediaJsonHelper.cs" Link="Shared\Services\Instagram\InstagramMediaJsonHelper.cs" />
+    <Compile Include="..\DownloadMaster\Services\Instagram\InstagramShortcodeHelper.cs" Link="Shared\Services\Instagram\InstagramShortcodeHelper.cs" />
+    <Compile Include="..\DownloadMaster\Services\Instagram\InstagramUrlHelper.cs" Link="Shared\Services\Instagram\InstagramUrlHelper.cs" />
+    <Compile Include="..\DownloadMaster\Services\LocalizationService.cs" Link="Shared\Services\LocalizationService.cs" />
+    <Compile Include="..\DownloadMaster\Services\Localization\*.cs" Link="Shared\Services\Localization\%(Filename)%(Extension)" />
+    <Compile Include="..\DownloadMaster\Services\Bridge\BridgeModels.cs" Link="Shared\Services\Bridge\BridgeModels.cs" />
+    <Compile Include="..\DownloadMaster\Services\Bridge\LocalBridgeServer.cs" Link="Shared\Services\Bridge\LocalBridgeServer.cs" />
+    <Compile Include="..\DownloadMaster\Services\Bridge\SingleInstance.cs" Link="Shared\Services\Bridge\SingleInstance.cs" />
+    <Compile Include="..\DownloadMaster\Services\CommandLine\*.cs" Link="Shared\Services\CommandLine\%(Filename)%(Extension)" />
+    <Compile Include="..\DownloadMaster\Services\Remote\*.cs" Link="Shared\Services\Remote\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

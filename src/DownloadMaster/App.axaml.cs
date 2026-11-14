@@ -7,6 +7,8 @@ using Avalonia.Platform;
 using Avalonia.Threading;
 using DownloadMaster.Services;
 using DownloadMaster.Services.Bridge;
+using DownloadMaster.Services.CommandLine;
+using DownloadMaster.Services.Remote;
 
 namespace DownloadMaster;
 
@@ -43,21 +45,25 @@ public partial class App : Application
             _desktop = desktop;
             // The app keeps running in the tray after the window is hidden; Exit shuts it down.
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-            desktop.Exit += (_, _) => _bridge?.Dispose();
+            desktop.Exit += (_, _) =>
+            {
+                _bridge?.Dispose();
+                _remote?.Dispose();
+            };
 
             _window = new MainWindow();
             _window.Closed += (_, _) => desktop.Shutdown();
             CreateTrayIcon();
             StartBridge();
+            ApplyRemoteAccess(_window.Settings);
 
-            var startMinimized = desktop.Args?.Contains("--minimized", StringComparer.OrdinalIgnoreCase) == true
-                && _window.MinimizeToTrayEnabled;
+            var launch = LaunchOptions.Parse(desktop.Args);
+            var startMinimized = launch.StartMinimized && _window.MinimizeToTrayEnabled;
             if (!startMinimized)
                 desktop.MainWindow = _window;
 
-            var url = desktop.Args?.FirstOrDefault(IsHttpUrl);
-            if (url is not null)
-                Dispatcher.UIThread.Post(() => _window.RouteUrl(url), DispatcherPriority.Background);
+            if (launch.HasWork)
+                Dispatcher.UIThread.Post(() => _window.HandleLaunch(launch), DispatcherPriority.Background);
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -105,8 +111,49 @@ public partial class App : Application
             _tray.IsVisible = false;
 
         _bridge?.Dispose();
+        _remote?.Dispose();
         _window?.CloseForExit();
         _desktop?.Shutdown();
+    }
+
+    private RemoteServer? _remote;
+
+    /// <summary>Why remote access couldn't start (port in use…), or null.</summary>
+    public string? RemoteAccessError { get; private set; }
+
+    /// <summary>Pairing links while remote access is on; empty when off.</summary>
+    public IReadOnlyList<string> RemotePairingLinks => _remote?.PairingLinks() ?? [];
+
+    /// <summary>
+    /// Starts, restarts or stops the remote-control server to match the settings (startup and
+    /// after Settings is saved). Creates the pairing token on first use.
+    /// </summary>
+    public void ApplyRemoteAccess(SettingsService settings)
+    {
+        _remote?.Dispose();
+        _remote = null;
+        RemoteAccessError = null;
+
+        var current = settings.Current;
+        if (!current.RemoteAccessEnabled || _window is null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(current.RemoteAccessToken))
+        {
+            current.RemoteAccessToken = RemoteSecurity.NewToken();
+            settings.Save(current);
+        }
+
+        var server = new RemoteServer(_window, current.RemoteAccessToken);
+        if (server.TryStart(current.RemoteAccessPort, current.RemoteAccessOnNetwork, out var error))
+        {
+            _remote = server;
+        }
+        else
+        {
+            server.Dispose();
+            RemoteAccessError = error;
+        }
     }
 
     /// <summary>Called by MainWindow when the language or interception setting changes.</summary>
@@ -148,10 +195,12 @@ public partial class App : Application
             Dispatcher.UIThread.Post(() => _window?.ShowCaughtMedia(request));
         _bridge.ActivateRequested += request => Dispatcher.UIThread.Post(() =>
         {
-            ShowMainWindow();
-            var url = request.Args.FirstOrDefault(IsHttpUrl);
-            if (url is not null)
-                _window?.RouteUrl(url);
+            var launch = LaunchOptions.Parse(request.Args);
+            // "/d URL /n" from a script queues silently; anything else brings the window up.
+            if (!launch.StartMinimized && !(launch.NoConfirm && launch.Url is not null))
+                ShowMainWindow();
+            if (launch.HasWork)
+                _window?.HandleLaunch(launch);
         });
 
         if (!_bridge.TryStart(out var error))

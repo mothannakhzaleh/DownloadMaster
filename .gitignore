@@ -142,3 +142,6 @@ test-output/
 
 # Ready-to-run local builds (publish-standalone.bat / publish.sh)
 ship/
+
+# Agent worktrees (temporary)
+.claude/worktrees/

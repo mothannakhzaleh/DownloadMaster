@@ -205,6 +205,52 @@ public partial class MainWindow : Window
             await Dialogs.ShowAsync(this, _loc.Get("TrayClipboardNoUrl"), _loc.Get("TrayAddFromClipboard"), DialogKind.Warning);
     }
 
+    /// <summary>
+    /// Command-line work (first launch or handed over by a second launch): /s resumes everything;
+    /// /d URL opens the "download caught" popup with /p and /f filled in, or with /n queues it at once.
+    /// </summary>
+    public async void HandleLaunch(Services.CommandLine.LaunchOptions launch)
+    {
+        if (launch.ResumeAll)
+            ResumeAll();
+        if (launch.Url is not { } url)
+            return;
+
+        var isFile = launch.FileName is not null
+            || (Uri.TryCreate(url, UriKind.Absolute, out var uri) && LooksLikeDirectFile(uri));
+        if (!launch.NoConfirm)
+        {
+            if (isFile)
+            {
+                ShowCaughtWindow(new CaughtDownload
+                {
+                    Url = url,
+                    SuggestedName = launch.FileName ?? FileNameFromUrl(url)
+                }, launch.Folder);
+            }
+            else
+            {
+                RouteUrl(url);
+            }
+
+            return;
+        }
+
+        var source = new CaughtDownload
+        {
+            IsMedia = !isFile,
+            Url = url,
+            SuggestedName = launch.FileName ?? (isFile ? FileNameFromUrl(url) : string.Empty)
+        };
+        await EnqueueCaughtAsync(new CaughtDownloadChoice(
+            source,
+            launch.FileName ?? (isFile ? source.SuggestedName : string.Empty),
+            launch.Folder ?? GetSaveFolder(),
+            _settings.Current.FileDownloadConnections,
+            _settings.Current.DefaultQuality,
+            _settings.Current.PreferredFormat));
+    }
+
     /// <summary>Puts a link into the matching tab (Instagram, Files or Video). Returns false if it isn't an http(s) URL.</summary>
     public bool RouteUrl(string? text)
     {
@@ -352,12 +398,12 @@ public partial class MainWindow : Window
         });
     }
 
-    private void ShowCaughtWindow(CaughtDownload download)
+    private void ShowCaughtWindow(CaughtDownload download, string? folder = null)
     {
         var window = new DownloadCaughtWindow(
             download,
             _loc,
-            GetSaveFolder(),
+            folder ?? GetSaveFolder(),
             _settings.Current.FileDownloadConnections,
             EnqueueCaughtAsync);
         window.Show();
@@ -436,17 +482,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private static bool LooksLikeDirectFile(Uri uri)
-    {
-        string[] fileExtensions =
-        [
-            ".zip", ".7z", ".rar", ".exe", ".msi", ".iso", ".dmg", ".pkg", ".deb", ".rpm", ".appimage",
-            ".tar", ".gz", ".xz", ".pdf", ".mp3", ".flac", ".apk"
-        ];
-        var path = uri.AbsolutePath;
-        return fileExtensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
-            || uri.Host.Contains("drive.google.com", StringComparison.OrdinalIgnoreCase);
-    }
+    private static bool LooksLikeDirectFile(Uri uri) => LinkKind.LooksLikeDirectFile(uri);
 
     private void UpdateInstagramCookiesStatus()
     {
@@ -1993,6 +2029,7 @@ public partial class MainWindow : Window
             return;
 
         _settings.Save(dlg.ResultSettings);
+        (Avalonia.Application.Current as App)?.ApplyRemoteAccess(_settings);
         ApplySchedulerSettings();
         ApplyClipboardMonitor();
         SavePathBox.Text = dlg.ResultSettings.DefaultSavePath;

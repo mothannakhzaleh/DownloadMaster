@@ -199,13 +199,16 @@ public sealed class DownloadItem : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    // Downloads update items from worker threads; Avalonia bindings must be notified on the UI thread.
+    /// <summary>
+    /// How change notifications reach listeners. Downloads update items from worker threads, so the
+    /// desktop app sets this to post onto its UI thread (App startup). The command-line tool and the
+    /// headless server have no UI thread and keep the default: raise the event directly.
+    /// </summary>
+    public static Action<Action> NotifyDispatcher { get; set; } = static notify => notify();
+
     private void OnPropertyChanged([CallerMemberName] string? name = null)
     {
         var args = new PropertyChangedEventArgs(name);
-        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-            PropertyChanged?.Invoke(this, args);
-        else
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => PropertyChanged?.Invoke(this, args));
+        NotifyDispatcher(() => PropertyChanged?.Invoke(this, args));
     }
 }
